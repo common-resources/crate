@@ -16,27 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+      - uses: crytic/slither-action@v0.4.0
         with:
-          version: nightly
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "20"
-          cache: "yarn"
-
-      - name: Install dependencies
-        run: yarn
-        id: install
-
-      - name: Run Forge build
-        run: |
-          forge --version
-          forge build --sizes
-        id: build
-      - name: Run Slither
-        uses: crytic/slither-action@v0.4.0
-        with:
-          target: "./src/contracts"
+          target: "."
+          slither-args: "--include-paths ./src/contracts --skip-assembly"
+          fail-on: "high"

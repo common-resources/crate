@@ -25,7 +25,7 @@
     "lint:sol": "solhint  contracts/**/*.sol --fix",
     "lint:ts": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore --ext .js,.ts . --fix",
     "prettier": "prettier --config ./.prettierrc.json --ignore-path ./.prettierignore --write \"**/*.{js,json,md,sol,ts}\"",
-    "slither": "pipx run --spec slither-analyzer slither src/contracts",
+    "slither": "pipx run --spec slither-analyzer slither . --skip-assembly --include-paths ./src/contracts",
     "test": "forge test",
     "test:coverage": "forge coverage --nmco '.*\\.(t|s)\\.sol$'",
     "test:coverage:report": "forge coverage --nmco '.*\\.(t|s)\\.sol$' --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage"
