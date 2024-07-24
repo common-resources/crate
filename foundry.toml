@@ -1,0 +1,29 @@
+[profile.default]
+auto_detect_solc = false
+bytecode_hash = "none"
+fuzz = { runs = 1_000 }
+gas_reports = ["*"]
+optimizer = true
+out = "out"
+script = "script"
+solc = "0.8.26"
+src = "src"
+test = "test"
+
+[profile.ci]
+fuzz = { runs = 10_000 }
+verbosity = 4
+
+[fmt]
+bracket_spacing = false
+func_attrs_with_params_multiline = false
+int_types = "long"
+line_length = 120
+multiline_func_header = "all"
+number_underscore = "thousands"
+quote_style = "double"
+single_line_statement_blocks = 'preserve'
+sort_imports = true
+tab_width = 4
+variable_override_spacing = true
+wrap_comments = true

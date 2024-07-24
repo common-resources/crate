@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2024 Johannes Krauser III <krauser@co.xyz>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+name: REUSE License Compliance
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  reuse:
+    strategy:
+      fail-fast: true
+
+    name: Reuse compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Run Reuse tool
+        run: |
+          pipx run reuse lint
+        id: reuse-lint

@@ -1,0 +1,42 @@
+version = 1
+SPDX-PackageName = "crate"
+SPDX-PackageSupplier = "Johannes Krauser III <krauser@co.xyz>"
+SPDX-PackageDownloadLocation = "https://github.com/common-resources/crate"
+
+[[annotations]]
+path = [
+    ".eslintrc.json",
+    ".solhint.json",
+    "tsconfig.json",
+    "package.json",
+    ".vscode/extensions.json",
+    ".vscode/settings.json",
+    "foundry.toml",
+    "yarn.lock",
+    ".gitignore",
+    "remappings.txt",
+    "lcov.info",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2024 Johannes Krauser III <krauser@co.xyz>, Zodomo <zodomo@proton.me>"
+SPDX-License-Identifier = "NOASSERTION"
+
+[[annotations]]
+path = ["REUSE.toml"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2024 Johannes Krauser III <krauser@co.xyz>, Zodomo <zodomo@proton.me>"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = ["architecture/V1.pdf"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2024 Johannes Krauser III <krauser@co.xyz>, Zodomo <zodomo@proton.me>"
+SPDX-FileType = "DOCUMENTATION"
+SPDX-License-Identifier = "NOASSERTION"
+
+[[annotations]]
+path = ["4naly3e-report.md"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2024 Johannes Krauser III <krauser@co.xyz>, Zodomo <zodomo@proton.me>"
+SPDX-FileType = "TEXT"
+SPDX-License-Identifier = "NOASSERTION"

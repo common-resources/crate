@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "ryanluker.vscode-coverage-gutters",
+    "dbaeumer.vscode-eslint",
+    "sleistner.vscode-fileutils",
+    "tamasfe.even-better-toml",
+    "esbenp.prettier-vscode",
+    "nomicfoundation.hardhat-solidity"
+  ]
+}
