@@ -67,7 +67,7 @@ abstract contract CoreMetadata721 is ERC721, CoreMetadata, ICoreMetadata721 {
     function setBaseURI(string memory baseURI_, string memory fileExtension_) external virtual onlyOwner {
         CoreMetadata._setBaseURI(baseURI_, fileExtension_);
 
-        emit BatchMetadataUpdate(0, _totalSupply);
+        emit BatchMetadataUpdate(0, maxSupply);
     }
 
     function freezeURI() external virtual onlyOwner {

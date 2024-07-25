@@ -133,7 +133,7 @@ abstract contract CoreMetadata is Core, ICoreMetadata {
     function _freezeURI() internal virtual {
         permanentURI = true;
 
-        emit BatchPermanentURI(0, _totalSupply);
+        emit BatchPermanentURI(0, maxSupply);
     }
 
     /**
