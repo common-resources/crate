@@ -10,6 +10,8 @@
 
 pragma solidity ^0.8.26;
 
+import {Core} from "../Core.sol";
+
 import {ICoreMetadata} from "./ICoreMetadata.sol";
 
 import {LibString} from "solady/src/utils/LibString.sol";
@@ -20,7 +22,7 @@ import {LibString} from "solady/src/utils/LibString.sol";
  * @notice Core Advancement laying out the basics of a contract integrating token uri / metadata features.
  * @custom:github https://github.com/common-resources/crate
  */
-abstract contract CoreMetadata is ICoreMetadata {
+abstract contract CoreMetadata is Core, ICoreMetadata {
     using LibString for uint256; // Used to convert uint256 tokenId to string for tokenURI()
 
     /**
@@ -101,7 +103,7 @@ abstract contract CoreMetadata is ICoreMetadata {
      */
     function _setContractURI(string memory contractURI_) internal virtual {
         _contractURI = contractURI_;
-        emit ContractMetadataUpdate(contractURI_);
+        emit ContractURIUpdated(contractURI_);
     }
 
     /**
@@ -128,10 +130,10 @@ abstract contract CoreMetadata is ICoreMetadata {
      * @notice Freezes the metadata for the entire collection.
      * @dev Once the metadata is frozen, it cannot be updated anymore.
      */
-    function _freezeURI(uint256 maxSupply_) internal virtual {
+    function _freezeURI() internal virtual {
         permanentURI = true;
 
-        emit BatchPermanentURI(0, maxSupply_);
+        emit BatchPermanentURI(0, _totalSupply);
     }
 
     /**

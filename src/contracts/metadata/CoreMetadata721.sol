@@ -28,7 +28,7 @@ import {IERC4906} from "@openzeppelin/contracts/interfaces/IERC4906.sol";
  * contract.
  * @custom:github https://github.com/common-resources/crate
  */
-abstract contract CoreMetadata721 is CoreMetadata, ERC721, ICoreMetadata721 {
+abstract contract CoreMetadata721 is ERC721, CoreMetadata, ICoreMetadata721 {
     function name() public view virtual override returns (string memory name_) {
         return _name;
     }
@@ -45,7 +45,12 @@ abstract contract CoreMetadata721 is CoreMetadata, ERC721, ICoreMetadata721 {
         override(ICoreMetadata721, ERC721)
         returns (string memory tokenURI_)
     {
-        return _tokenURI(tokenId_);
+        if (_exists(tokenId_)) return _tokenURI(tokenId_);
+        revert TokenDoesNotExist();
+    }
+
+    function setContractURI(string memory contractURI_) external virtual onlyOwner {
+        CoreMetadata._setContractURI(contractURI_);
     }
 
     /**
@@ -53,16 +58,24 @@ abstract contract CoreMetadata721 is CoreMetadata, ERC721, ICoreMetadata721 {
      * @param tokenId_ The ID of the token.
      * @param tokenURI_ The new token URI.
      */
-    function _setTokenURI(uint256 tokenId_, string memory tokenURI_) internal virtual override {
+    function setTokenURI(uint256 tokenId_, string memory tokenURI_) external virtual onlyOwner {
         CoreMetadata._setTokenURI(tokenId_, tokenURI_);
 
         emit MetadataUpdate(tokenId_);
     }
 
-    function _setBaseURI(string memory baseURI_, string memory fileExtension_, uint256 maxSupply_) internal virtual {
+    function setBaseURI(string memory baseURI_, string memory fileExtension_) external virtual onlyOwner {
         CoreMetadata._setBaseURI(baseURI_, fileExtension_);
 
-        emit BatchMetadataUpdate(0, maxSupply_);
+        emit BatchMetadataUpdate(0, _totalSupply);
+    }
+
+    function freezeURI() external virtual onlyOwner {
+        CoreMetadata._freezeURI();
+    }
+
+    function freezeTokenURI(uint256 tokenId_) external virtual onlyOwner {
+        CoreMetadata._freezeTokenURI(tokenId_);
     }
 
     function supportsInterface(bytes4 interfaceId_) public view virtual override returns (bool) {

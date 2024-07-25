@@ -28,13 +28,6 @@ interface ICoreMetadata721 {
     event BatchMetadataUpdate(uint256 fromTokenId_, uint256 toTokenId_);
 
     /**
-     * @notice Sets the token URI for a specific token.
-     * @param tokenId_ The ID of the token.
-     * @param tokenURI_ The new token URI.
-     */
-    function setTokenURI(uint256 tokenId_, string memory tokenURI_) external;
-
-    /**
      * @notice Returns the URI for the given token ID.
      * @dev if the token has a non-empty, manually set URI, it will be returned as is,
      * otherwise it will return the concatenation of the baseURI, the token ID and, optionally,  the file extension.

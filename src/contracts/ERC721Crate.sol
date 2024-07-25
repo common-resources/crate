@@ -14,13 +14,13 @@ pragma solidity ^0.8.26;
 // >>>>>>>>>>>> [ IMPORTS ] <<<<<<<<<<<<
 
 import {Core} from "./Core.sol";
-import {BlacklistExt} from "./extensions/blacklist/BlacklistExt.sol";
-import {MintList, MintlistExt} from "./extensions/lists/MintlistExt.sol";
-import {LockableExt} from "./extensions/lockable/LockableExt.sol";
+import {CoreMetadata721} from "./metadata/CoreMetadata721.sol";
 
+import {BlacklistExt} from "./extensions/blacklist/BlacklistExt.sol";
+import {MintlistExt} from "./extensions/lists/MintlistExt.sol";
+import {LockableExt} from "./extensions/lockable/LockableExt.sol";
 import {ReferralExt} from "./extensions/referral/ReferralExt.sol";
 import {RoyaltyExt} from "./extensions/royalty/RoyaltyExt.sol";
-import {CoreMetadata721, ICoreMetadata} from "./metadata/CoreMetadata721.sol";
 
 import {NotZero} from "./ICore.sol";
 
@@ -35,7 +35,7 @@ import {FixedPointMathLib as FPML} from "solady/src/utils/FixedPointMathLib.sol"
  * @notice ERC721 template that contains launchpad friendly features to be inherited by other contracts
  * @custom:github https://github.com/common-resources/crate
  */
-contract ERC721Crate is Core, BlacklistExt, MintlistExt, CoreMetadata721, ReferralExt, RoyaltyExt, Initializable {
+contract ERC721Crate is Initializable, CoreMetadata721, BlacklistExt, MintlistExt, ReferralExt, RoyaltyExt {
     function _canMint(uint256 amount_) internal view override returns (uint32 tokenAmount_) {
         tokenAmount_ = Core._canMint(amount_);
 
@@ -117,18 +117,6 @@ contract ERC721Crate is Core, BlacklistExt, MintlistExt, CoreMetadata721, Referr
     }
 
     // >>>>>>>>>>>> [ VIEW / METADATA FUNCTIONS ] <<<<<<<<<<<<
-
-    /// @inheritdoc CoreMetadata721
-    function tokenURI(uint256 tokenId_)
-        public
-        view
-        virtual
-        override(CoreMetadata721)
-        returns (string memory tokenURI_)
-    {
-        if (_exists(tokenId_)) return _tokenURI(tokenId_);
-        revert TokenDoesNotExist();
-    }
 
     function supportsInterface(bytes4 interfaceId_)
         public
@@ -283,32 +271,9 @@ contract ERC721Crate is Core, BlacklistExt, MintlistExt, CoreMetadata721, Referr
     // >>>>>>>>>>>> [ PERMISSIONED / OWNER FUNCTIONS ] <<<<<<<<<<<<
 
     /// @dev Override to account for the lists reserved supply.
-    /// @inheritdoc Core
     function setSupply(uint32 maxSupply_) external virtual override onlyOwner {
         if (maxSupply_ < _totalSupply + _reservedSupply) revert UnderSupply();
         _setMaxSupply(maxSupply_);
-    }
-
-    // >>>>>>>>>>>> [ Metadata ] <<<<<<<<<<<<
-
-    function setContractURI(string memory contractURI_) external virtual onlyOwner {
-        _setContractURI(contractURI_);
-    }
-
-    function setBaseURI(string memory baseURI_, string memory fileExtension_) external virtual onlyOwner {
-        _setBaseURI(baseURI_, fileExtension_, maxSupply);
-    }
-
-    function setTokenURI(uint256 tokenId_, string memory tokenURI_) external virtual onlyOwner {
-        _setTokenURI(tokenId_, tokenURI_);
-    }
-
-    function freezeURI() external virtual onlyOwner {
-        _freezeURI(maxSupply);
-    }
-
-    function freezeTokenURI(uint256 tokenId_) external virtual onlyOwner {
-        _freezeTokenURI(tokenId_);
     }
 
     // >>>>>>>>>>>> [ Lists ] <<<<<<<<<<<<
@@ -374,7 +339,6 @@ contract ERC721Crate is Core, BlacklistExt, MintlistExt, CoreMetadata721, Referr
 
     // >>>>>>>>>>>> [ ASSET HANDLING ] <<<<<<<<<<<<
 
-    /// @inheritdoc Core
     function _processPayment() internal virtual override {
         if (!paused()) {
             mint(msg.sender, (msg.value / price));

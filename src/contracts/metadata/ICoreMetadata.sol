@@ -21,7 +21,7 @@ interface ICoreMetadata {
      * @dev Emitted when the contract metadata is updated.
      * @param uri_ The new contract metadata URI.
      */
-    event ContractMetadataUpdate(string indexed uri_);
+    event ContractURIUpdated(string indexed uri_);
 
     // @TODO document
     event URI(string value_, uint256 tokenId_);
@@ -79,12 +79,6 @@ interface ICoreMetadata {
      * @param fileExtension_ The file extension for the collection tokenURIs. e.g. ".json"
      */
     function setBaseURI(string memory baseURI_, string memory fileExtension_) external;
-
-    /**
-     * @notice Freezes the metadata for the entire collection.
-     * @dev Once the metadata is frozen, it cannot be updated anymore.
-     */
-    function freezeURI() external;
 
     /**
      * @notice Freezes the metadata for a specific token.
