@@ -12,7 +12,7 @@
 pragma solidity ^0.8.26;
 
 import {NotZero} from "../../ICore.sol";
-import {IERC165, IRoyaltyExt} from "./IRoyaltyExt.sol";
+import {IRoyaltyExt} from "./IRoyaltyExt.sol";
 
 import {ERC2981} from "solady/src/tokens/ERC2981.sol";
 
@@ -66,7 +66,7 @@ abstract contract RoyaltyExt is IRoyaltyExt, ERC2981 {
         emit RoyaltiesDisabled();
     }
 
-    function supportsInterface(bytes4 interfaceId_) public view virtual override(ERC2981, IERC165) returns (bool) {
+    function supportsInterface(bytes4 interfaceId_) public view virtual override returns (bool) {
         return ERC2981.supportsInterface(interfaceId_);
     }
 }

@@ -16,8 +16,8 @@ import {ReentrancyGuard} from "solady/src/utils/ReentrancyGuard.sol";
 
 import {ICore, NotZero, TransferFailed} from "./ICore.sol";
 
-import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {IERC721} from "@openzeppelin/contracts/interfaces/IERC721.sol";
+import {ERC20 as tERC20} from "token-types/src/ERC20.sol";
+import {ERC721 as tERC721} from "token-types/src/ERC721.sol";
 
 /**
  * @title Core
@@ -167,7 +167,7 @@ abstract contract Core is ICore, Ownable, Pausable, ReentrancyGuard {
     }
 
     function _sendERC20(address token_, address recipient_, uint256 amount_) internal virtual {
-        IERC20(token_).transfer(recipient_, amount_);
+        tERC20.wrap(token_).transfer(recipient_, amount_);
     }
 
     /**
@@ -176,12 +176,12 @@ abstract contract Core is ICore, Ownable, Pausable, ReentrancyGuard {
      * @param recipient_ The address to which the tokens are transferred.
      */
     function rescueERC20(address token_, address recipient_) public virtual onlyOwner {
-        uint256 balance = IERC20(token_).balanceOf(address(this));
+        uint256 balance = tERC20.wrap(token_).balanceOf(address(this));
         _sendERC20(token_, recipient_, balance);
     }
 
     function _sendERC721(address token_, address recipient_, uint256 tokenId_) internal virtual {
-        IERC721(token_).transferFrom(address(this), recipient_, tokenId_);
+        tERC721.wrap(token_).transferFrom(address(this), recipient_, tokenId_);
     }
 
     /**

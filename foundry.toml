@@ -1,5 +1,6 @@
 [profile.default]
 auto_detect_solc = false
+evm_version = "cancun"
 bytecode_hash = "none"
 fuzz = { runs = 1_000 }
 gas_reports = ["*"]

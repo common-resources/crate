@@ -11,7 +11,7 @@
 
 pragma solidity ^0.8.26;
 
-import {IAsset} from "../blacklist/IAsset.sol";
+import {Asset as tAsset} from "../blacklist/Asset.sol";
 import {IBlacklistExt} from "../blacklist/IBlacklistExt.sol";
 
 import {EnumerableSetLib} from "solady/src/utils/EnumerableSetLib.sol";
@@ -59,8 +59,8 @@ abstract contract BlacklistExt is IBlacklistExt {
         uint256 count;
         for (uint256 i = 1; i < blacklist.length;) {
             unchecked {
-                count += IAsset(blacklist[i]).balanceOf(msg.sender);
-                count += IAsset(blacklist[i]).balanceOf(recipient_);
+                count += tAsset.wrap(blacklist[i]).balanceOf(msg.sender);
+                count += tAsset.wrap(blacklist[i]).balanceOf(recipient_);
                 if (count > 0) revert Blacklisted();
                 ++i;
             }

@@ -10,15 +10,13 @@
 
 pragma solidity ^0.8.26;
 
-import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
-
 /**
  * @title IRoyaltyExt
  * @author 0xKrauser (Discord/Github/X: @0xKrauser, Email: krauser@co.xyz)
  * @notice Interface to integrate RoyaltyExt and require missing external functions.
  * @custom:github https://github.com/common-resources/crate
  */
-interface IRoyaltyExt is IERC165 {
+interface IRoyaltyExt {
     /**
      * @dev Emitted when the royalty fee for a specific token is updated.
      * @param tokenId_ The ID of the token for which the royalty fee is updated.

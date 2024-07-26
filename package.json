@@ -35,7 +35,8 @@
     "erc721-lockable": "github:filmakarov/erc721-lockable",
     "erc721s": "https://github.com/filmakarov/erc721-lockable",
     "forge-std": "github:foundry-rs/forge-std#v1.9.1",
-    "solady": "github:vectorized/solady"
+    "solady": "github:vectorized/solady",
+    "token-types": "github:jtriley-eth/token-types"
   },
   "devDependencies": {
     "4naly3er": "Picodes/4naly3er",

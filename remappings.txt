@@ -1,4 +1,5 @@
 @openzeppelin/contracts/=node_modules/@openzeppelin/contracts/
 erc721-lockable/=node_modules/erc721s/
 forge-std/=node_modules/forge-std/
-solady/=node_modules/solady
+solady/=node_modules/solady/
+token-types/=node_modules/token-types/

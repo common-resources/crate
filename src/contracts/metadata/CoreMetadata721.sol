@@ -17,9 +17,6 @@ import {ICoreMetadata721} from "./ICoreMetadata721.sol";
 
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 
-import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
-import {IERC4906} from "@openzeppelin/contracts/interfaces/IERC4906.sol";
-
 /**
  * @title CoreMetadata721
  * @author 0xKrauser (Discord/Github/X: @0xKrauser, Email: krauser@co.xyz)
