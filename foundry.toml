@@ -1,5 +1,5 @@
 [profile.default]
-auto_detect_solc = false
+auto_detect_solc = true
 evm_version = "cancun"
 bytecode_hash = "none"
 fuzz = { runs = 1_000 }
@@ -12,6 +12,7 @@ src = "src"
 test = "test"
 
 [profile.ci]
+evm_version = "cancun"
 fuzz = { runs = 10_000 }
 verbosity = 4
 

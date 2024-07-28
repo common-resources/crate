@@ -181,7 +181,7 @@ abstract contract Core is ICore, Ownable, Pausable, ReentrancyGuard {
     }
 
     function _sendERC721(address token_, address recipient_, uint256 tokenId_) internal virtual {
-        tERC721.wrap(token_).safeTransferFrom(address(this), recipient_, tokenId_);
+        tERC721.wrap(token_).safeTransferFrom(address(this), recipient_, tokenId_, "");
     }
 
     /**

@@ -26,8 +26,6 @@ import {NotZero} from "./ICore.sol";
 
 import {Initializable} from "solady/src/utils/Initializable.sol";
 
-import {FixedPointMathLib as FPML} from "solady/src/utils/FixedPointMathLib.sol";
-
 /**
  * @title ERC721Crate
  * @author Zodomo.eth (Farcaster/Telegram/Discord/Github: @zodomo, X: @0xZodomo, Email: zodomo@proton.me)
@@ -45,7 +43,9 @@ contract ERC721Crate is Initializable, CoreMetadata721, BlacklistExt, MintlistEx
     // >>>>>>>>>>>> [ CONSTRUCTION / INITIALIZATION ] <<<<<<<<<<<<
 
     /// @dev Constructor is kept empty in order to make the template compatible with ERC-1167 proxy factories
-    constructor() payable {}
+    constructor() payable {
+        _disableInitializers();
+    }
 
     /**
      * @dev Initializes the contract with the given basic parameters.
@@ -97,6 +97,7 @@ contract ERC721Crate is Initializable, CoreMetadata721, BlacklistExt, MintlistEx
         onlyInitializing
     {
         _pause();
+        _claimed[address(0)] = 0;
 
         _initializeOwner(owner_);
         _setRoyalties(owner_, royalty_);
@@ -137,7 +138,7 @@ contract ERC721Crate is Initializable, CoreMetadata721, BlacklistExt, MintlistEx
      * @param amount_ The amount_ of tokens to mint.
      * @param referral_ The address of the referrer.
      */
-    function _handleMint(address recipient_, uint256 amount_, address referral_) internal virtual {
+    function _handleMint(address recipient_, uint256 amount_, address referral_) internal virtual nonReentrant {
         uint32 tokenAmount = _canMint(amount_);
 
         _handleReferral(referral_, recipient_);
@@ -190,6 +191,7 @@ contract ERC721Crate is Initializable, CoreMetadata721, BlacklistExt, MintlistEx
     )
         internal
         virtual
+        nonReentrant
     {
         _handleReferral(referral_, recipient_);
 
@@ -240,7 +242,7 @@ contract ERC721Crate is Initializable, CoreMetadata721, BlacklistExt, MintlistEx
      * @param amount_ The amount of tokens to mint.
      * @param referral_ The address of the referrer.
      */
-    function mint(address recipient_, uint256 amount_, address referral_) public payable virtual nonReentrant {
+    function mint(address recipient_, uint256 amount_, address referral_) public payable virtual {
         _handleMint(recipient_, amount_, referral_);
     }
 
@@ -263,7 +265,6 @@ contract ERC721Crate is Initializable, CoreMetadata721, BlacklistExt, MintlistEx
         public
         payable
         virtual
-        nonReentrant
     {
         _handleMintWithList(proof_, listId_, recipient_, amount_, referral_);
     }
