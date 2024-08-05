@@ -99,7 +99,7 @@ abstract contract Core is ICore, Ownable, Pausable, ReentrancyGuard {
 
     function setMintPeriod(uint32 start_, uint32 end_) external onlyOwner {
         if (end_ != 0 && start_ > end_) revert TimestampEnd();
-        if (start == 0 && start != start_) _unpause(); // Open minting if it wasn't already
+        if (start == 0 && start != start_ && paused()) _unpause(); // Open minting if it wasn't already
         start = start_;
         end = end_;
 
