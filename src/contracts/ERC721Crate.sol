@@ -341,10 +341,14 @@ contract ERC721Crate is Initializable, CoreMetadata721, BlacklistExt, MintlistEx
     // >>>>>>>>>>>> [ ASSET HANDLING ] <<<<<<<<<<<<
 
     function _processPayment() internal virtual override {
-        if (!paused()) {
-            mint(msg.sender, (msg.value / price));
-        } else {
-            _processPayment();
+        bool mintedOut = (_totalSupply + _reservedSupply) == maxSupply;
+        if (mintedOut) {
+            Core._processPayment();
+            return;
         }
+
+        if (paused()) revert EnforcedPause();
+
+        mint(msg.sender, (msg.value / price));
     }
 }
