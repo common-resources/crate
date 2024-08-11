@@ -136,7 +136,7 @@ abstract contract MintlistExt is IMintlistExt {
         _validate(listId_, userSupply_, maxSupply_, unit_, start_, end_);
         uint8 id = listId_ == 0 ? listIndex++ : listId_; // If listId_ is 0, increment listCount and create new list
 
-        MintList storage list = lists[listId_];
+        MintList storage list = lists[id];
         if (listId_ != 0 && list.userSupply == 0) revert ListDeleted();
         _updateReserved(listId_, list.reserved, reserved_, list.maxSupply, maxSupply_, contractMaxSupply_);
 
