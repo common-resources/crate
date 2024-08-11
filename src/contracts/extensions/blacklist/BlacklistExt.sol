@@ -57,7 +57,7 @@ abstract contract BlacklistExt is IBlacklistExt {
     function _enforceBlacklist(address recipient_) internal virtual {
         address[] memory blacklist = _blacklist.values();
         uint256 count;
-        for (uint256 i = 1; i < blacklist.length;) {
+        for (uint256 i = 0; i < blacklist.length;) {
             unchecked {
                 count += tAsset.wrap(blacklist[i]).balanceOf(msg.sender);
                 count += tAsset.wrap(blacklist[i]).balanceOf(recipient_);
