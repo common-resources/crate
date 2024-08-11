@@ -212,12 +212,14 @@ contract ERC721CrateTest is Test, ERC721Holder {
             template.mint{value: price}(recipient, 1);
             assertEq(template.balanceOf(recipient), 1, "balanceOf error");
             assertEq(template.totalSupply(), 1, "totalSupply error");
+            assertEq(template.claimedOf(caller), 1, "claimedOf error");
             assertEq(address(template).balance, price, "template balance error");
         } else {
             vm.deal(caller, amount * price);
             template.mint{value: price * amount}(recipient, amount);
             assertEq(template.balanceOf(recipient), amount, "balanceOf error");
             assertEq(template.totalSupply(), amount, "totalSupply error");
+            assertEq(template.claimedOf(caller), amount, "claimedOf error");
             assertEq(address(template).balance, price * amount, "template balance error");
         }
     }
@@ -250,6 +252,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
         template.mint{value: price * amount}(recipient, amount, referrer);
         assertEq(template.balanceOf(recipient), amount, "balanceOf error");
         assertEq(template.totalSupply(), amount, "totalSupply error");
+        assertEq(template.claimedOf(caller), amount, "claimedOf error");
         assertEq(address(referrer).balance, refFee, "referrer balance error");
         assertEq(address(template).balance, (price * amount) - refFee, "template balance error");
     }
@@ -265,6 +268,22 @@ contract ERC721CrateTest is Test, ERC721Holder {
         template.unpause();
         vm.expectRevert(ICore.MaxSupply.selector);
         template.mint{value: 0.01 ether * 101}(address(this), 101);
+    }
+
+    function testSetSupply(uint256 amount) public {
+        vm.assume(amount > 0 && amount <= template.maxSupply());
+
+        template.unpause();
+        template.mint{value: amount*template.price()}(amount);
+
+        uint32 maxSupply = template.maxSupply();
+        uint32 totalSupply = uint32(template.totalSupply());
+
+        template.setSupply(uint32(amount));
+        vm.expectRevert(ICore.UnderSupply.selector);
+        template.setSupply(totalSupply - 1);
+        vm.expectRevert(ICore.MaxSupply.selector);
+        template.setSupply(maxSupply + 1);
     }
 
     function testRescueERC20() public {
