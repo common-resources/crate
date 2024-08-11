@@ -249,8 +249,8 @@ contract ERC721Crate is Initializable, CoreMetadata721, BlacklistExt, MintlistEx
     /**
      * @notice Mint the amount of tokens to the recipient, provided that enough ether is sent
      * @dev Batch mint with referral fee support and list merkle proof support.
-     * @param proof_ The address of the recipient.
-     * @param listId_ The address of the recipient.
+     * @param proof_ List of ordered hashes used to reconstruct the Merkel root.
+     * @param listId_ The id of the list to check against for permission.
      * @param recipient_ The address of the recipient.
      * @param amount_ The amount of tokens to mint.
      * @param referral_ The address of the referrer.
