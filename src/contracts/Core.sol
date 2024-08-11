@@ -72,18 +72,33 @@ abstract contract Core is ICore, Ownable, Pausable, ReentrancyGuard {
         return uint32(tokenAmount);
     }
 
+    /**
+     * @dev The amount of tokens is given by unit_ * amount of mints.
+     * @return _totalSupply The amount of tokens that have already been minted in total.
+     */
     function totalSupply() external view returns (uint256) {
         return _totalSupply;
     }
 
+    /**
+     * @dev Used to check that the userSupply limit is respected.
+     * @param wallet_ The wallet's address to check for minted tokens.
+     * @return tokenAmount_ The amount of tokens the user has already minted.
+     */
     function claimedOf(address wallet_) external view returns (uint256) {
         return _claimed[wallet_];
     }
 
+    /**
+     * @notice Pause the contract from minting any more tokens.
+     */
     function pause() external onlyOwner {
         _pause();
     }
 
+    /**
+     * @notice Unpause the contract and allow the minting of more tokens.
+     */
     function unpause() external onlyOwner {
         _unpause();
     }
@@ -97,6 +112,11 @@ abstract contract Core is ICore, Ownable, Pausable, ReentrancyGuard {
         emit PriceUpdate(price_);
     }
 
+    /**
+     * @notice Sets the price for minting a single token.
+     * @param start_ Start of the minting period in Unix time.
+     * @param end_ End of the minting period in Unix time.
+     */
     function setMintPeriod(uint32 start_, uint32 end_) external onlyOwner {
         if (end_ != 0 && start_ > end_) revert TimestampEnd();
         if (start == 0 && start != start_ && paused()) _unpause(); // Open minting if it wasn't already
@@ -106,12 +126,21 @@ abstract contract Core is ICore, Ownable, Pausable, ReentrancyGuard {
         emit MintPeriodUpdate(start_, end_);
     }
 
+    /**
+     * @notice Sets the maximum amount of mints per user.
+     * @param claimable_ New limit to the number of mints per user.
+     */
     function setClaimableUserSupply(uint32 claimable_) external virtual onlyOwner {
         if (claimable_ == 0) revert NotZero();
         userSupply = claimable_;
         emit UserClaimableUpdate(claimable_);
     }
 
+    /**
+     * @notice Sets the number of tokens that get created per mint.
+     * @dev The amount of tokens is given by unit_ * amount of mints.
+     * @param unit_ Number of tokens associated with each mint.
+     */
     function setUnit(uint24 unit_) external virtual onlyOwner {
         if (unit_ == 0) revert NotZero();
         unit = unit_;
