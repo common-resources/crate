@@ -16,6 +16,7 @@ import {ICoreMetadata} from "../contracts/metadata/ICoreMetadata.sol";
 import {ICoreMetadata721} from "../contracts/metadata/ICoreMetadata721.sol";
 import {IRoyaltyExt} from "../contracts/extensions/royalty/IRoyaltyExt.sol";
 import {IReferralExt} from "../contracts/extensions/referral/IReferralExt.sol";
+import {IBlacklistExt} from "../contracts/extensions/blacklist/IBlacklistExt.sol";
 import {ERC721Crate} from "../contracts/ERC721Crate.sol";
 import {MockERC20} from "./utils/MockERC20.sol";
 import {MockERC721} from "./utils/MockERC721.sol";
@@ -123,11 +124,22 @@ contract ERC721CrateTest is Test, ERC721Holder {
 
     function testTokenURI() public {
         template.unpause();
-        template.mint{value: 0.01 ether}(address(this), 1);
+        template.mint{value: template.price()}(address(this), 1);
+
         assertEq(
             keccak256(abi.encodePacked(template.tokenURI(1))),
             keccak256(
                     abi.encodePacked(string.concat("https://miya.wtf/api/", uint256(template.totalSupply()).toString()))
+            )
+        );
+
+        // Test setting a custom URI
+        template.mint{value: template.price()}(address(this), 1);
+        template.setTokenURI(2, "ThisIsATestURI");
+        assertEq(
+            keccak256(abi.encodePacked(template.tokenURI(2))),
+            keccak256(
+                    abi.encodePacked("ThisIsATestURI")
             )
         );
     }
@@ -168,12 +180,6 @@ contract ERC721CrateTest is Test, ERC721Holder {
         template.setBaseURI(baseURI, "");
     }
 
-    function testSetBaseURIRevertURILocked() public {
-        template.freezeURI();
-        vm.expectRevert(ICoreMetadata.URIPermanent.selector);
-        template.setBaseURI("ipfs://miyahash/", "");
-    }
-
     function testSetContractURI(string memory contractURI) public {
         vm.assume(bytes(contractURI).length > 0);
 
@@ -182,9 +188,13 @@ contract ERC721CrateTest is Test, ERC721Holder {
         assertEq(template.contractURI(), contractURI, "contractURI error");
     }
 
-    function testLockURI() public {
+    function testFreezeTokenURI() public {
+        template.unpause();
+        template.mint{value: template.price()}(address(this), 1);
+        
         template.freezeURI();
-        assertTrue(template.permanentURI());
+        vm.expectRevert(ICoreMetadata.URIPermanent.selector);
+        template.freezeTokenURI(1);
     }
 
     function testTransferOwnership(bytes32 newOwnerSalt) public {
@@ -271,7 +281,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
     }
 
     function testSetSupply(uint256 amount) public {
-        vm.assume(amount > 0 && amount <= template.maxSupply());
+        amount = bound(amount, 1, template.maxSupply()-1);
 
         template.unpause();
         template.mint{value: amount*template.price()}(amount);
@@ -406,11 +416,10 @@ contract ERC721CrateTest is Test, ERC721Holder {
             assertEq(storedBlacklist[idx], address(0));
         }
         
-        // Since order in AddressSet is not guaranteed delete all contents and see if it's empty
+        // Set blacklist and check that at least one value is different from address(0)
         template.setBlacklist(blacklist, true);
         storedBlacklist = template.getBlacklist();
 
-        // check that at least one value is different from address(0)
         bool diffZero = false;
         for(uint idx; idx<storedBlacklist.length;idx++) {
             if(storedBlacklist[idx] != address(0)) {
@@ -420,20 +429,51 @@ contract ERC721CrateTest is Test, ERC721Holder {
         }
         assertTrue(diffZero);
 
-        template.setBlacklist(blacklist, false);
-
+        // Since order in AddressSet is not guaranteed delete all contents and see if it's empty
         // check that stored list is empty at the end
+        template.setBlacklist(blacklist, false);
         storedBlacklist = template.getBlacklist();
         for(uint idx; idx<storedBlacklist.length;idx++) {
             assertEq(storedBlacklist[idx], address(0));
         }
     }
 
-    function testProcessPayment() public {
+    function testEnforceBlacklist() public {
+
+        uint256 price = template.price();
+        address[] memory blacklist = new address[](1);
+        blacklist[0] = address(template);
+
         template.unpause();
-        (bool success, ) = payable(address(template)).call{value: 1 ether}("");
+        // Test that blacklist is properly enforced
+        template.setBlacklist(blacklist, true);
+        template.mint{value: price}();
+        assertGt(template.balanceOf(address(this)), 0);
+
+        vm.expectRevert(IBlacklistExt.Blacklisted.selector);
+        template.mint{value: price}();
+    }
+
+    function testProcessPayment() public {
+
+        bool success;
+        uint256 price = template.price();
+        uint256 maxSupply = template.maxSupply();
+
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        (success, ) = payable(address(template)).call{value: 1 ether}("");
+
+        template.unpause();
+
+        (success, ) = payable(address(template)).call{value: price * (maxSupply-10)}("");
         assertTrue(success);
         assertGt(template.balanceOf(address(this)), 0);
+
+        // Test condition using reservedSupply from mintlist
+        template.setList(price, 0, "", 1, 10, uint32(block.timestamp), 0, 1,
+            true, false);
+        (success, ) = payable(address(template)).call{value: price}("");
+        assertEq(address(template).balance, price * (maxSupply-10));
     }
 
 }
