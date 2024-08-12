@@ -53,7 +53,6 @@ contract ERC721CrateTest is Test, ERC721Holder {
     function commutativeKeccak256(bytes32 a, bytes32 b) internal pure returns (bytes32) {
         return a < b ? keccak256(bytes.concat(a, b)) : keccak256(bytes.concat(b, a));
     }
-
     function setUp() public {
         masterCopy = new ERC721Crate();
         template = ERC721Crate(payable(LibClone.cloneDeterministic(address(masterCopy), bytes32(0x0))));
@@ -323,7 +322,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
         vm.expectRevert(IMintlistExt.ListClaimSupply.selector);
         template.mint{value: price}(proofList, 3, address(this), 1, address(0));
     }
-
+    
     function testMintRevertMintCapReached() public {
         template.unpause();
         template.mint{value: 0.01 ether * 100}(100);
