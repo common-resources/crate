@@ -61,30 +61,9 @@ abstract contract MintlistExt is IMintlistExt {
         external
         view
         virtual
-        returns (
-            bytes32 root_,
-            uint256 price_,
-            uint32 unit_,
-            uint32 userSupply_,
-            uint32 maxSupply_,
-            uint32 start_,
-            uint32 end_,
-            bool reserved_,
-            bool paused_
-        )
+        returns (MintList memory)
     {
-        MintList memory list = lists[listId_];
-        return (
-            list.root,
-            list.price,
-            list.unit,
-            list.userSupply,
-            list.maxSupply,
-            list.start,
-            list.end,
-            list.reserved,
-            list.paused
-        );
+        return lists[listId_];
     }
 
     function listClaimedOf(uint8 listId_, address wallet_) external view returns (uint256) {
