@@ -14,6 +14,7 @@ import {Core} from "../contracts/Core.sol";
 import {ICore, TransferFailed, NotZero} from "../contracts/ICore.sol";
 import {ICoreMetadata} from "../contracts/metadata/ICoreMetadata.sol";
 import {ICoreMetadata721} from "../contracts/metadata/ICoreMetadata721.sol";
+import {MintList, IMintlistExt} from "../contracts/extensions/lists/IMintlistExt.sol";
 import {IRoyaltyExt} from "../contracts/extensions/royalty/IRoyaltyExt.sol";
 import {IReferralExt} from "../contracts/extensions/referral/IReferralExt.sol";
 import {IBlacklistExt} from "../contracts/extensions/blacklist/IBlacklistExt.sol";
@@ -46,6 +47,12 @@ contract ERC721CrateTest is Test, ERC721Holder {
         return address(uint160(uint256(keccak256(abi.encode(fuzzedBytes)))));
     }
 
+    /**
+     * @dev Commutative Keccak256 hash of a sorted pair of bytes32. Frequently used when working with merkle proofs.
+    */
+    function commutativeKeccak256(bytes32 a, bytes32 b) internal pure returns (bytes32) {
+        return a < b ? keccak256(bytes.concat(a, b)) : keccak256(bytes.concat(b, a));
+    }
     function setUp() public {
         masterCopy = new ERC721Crate();
         template = ERC721Crate(payable(LibClone.cloneDeterministic(address(masterCopy), bytes32(0x0))));
@@ -267,6 +274,55 @@ contract ERC721CrateTest is Test, ERC721Holder {
         assertEq(address(template).balance, (price * amount) - refFee, "template balance error");
     }
 
+    function testMintWithList(
+        bytes32 proof,
+        uint32 amount,
+        uint32 userSupply,
+        uint32 maxSupply
+    ) public {
+        maxSupply = uint32(bound(maxSupply, 1, 10));
+        userSupply = uint32(bound(userSupply, uint32(1), maxSupply));
+        amount = uint32(bound(amount, 1, userSupply));
+
+        uint256 price = template.price();
+        // Build a simple proof consisting only of the other leaf of a binary tree of depth 1
+        bytes32 leaf = keccak256(bytes.concat(keccak256(bytes.concat(abi.encode(address(this))))));
+        bytes32 root = commutativeKeccak256(leaf, proof);
+
+        // Note: mininting using lists only cares if the list is paused, not if the Crate as a whole is
+        bytes32[] memory proofList = new bytes32[](1);
+        proofList[0] = proof;
+
+        template.setList(price, 0, root, userSupply, maxSupply, uint32(block.timestamp),
+            0, 1, true, false);
+        template.mint{value: price*amount}(proofList, 1, address(this), amount, address(0));
+        assertEq(template.listClaimedOf(1, address(this)), amount);
+
+        // id = 0 signals to create a new list
+        template.setList(price, 0, root, userSupply, maxSupply, uint32(block.timestamp+1000),
+            0, 1, false, false);
+        vm.expectRevert(IMintlistExt.ListTimeOutOfBounds.selector);
+        template.mint{value: price*amount}(proofList, 2, address(this), amount, address(0));
+
+        // test pauseList()
+        template.setList(price, 0, root, userSupply, maxSupply, uint32(block.timestamp),
+            0, 1, true, false);
+        template.pauseList(3);
+        vm.expectRevert(IMintlistExt.ListPaused.selector);
+        template.mint{value: price*amount}(proofList, 3, address(this), amount, address(0));
+
+        // test unpauseList()
+        template.unpauseList(3);
+        template.mint{value: price*amount}(proofList, 3, address(this), amount, address(0));
+        assertEq(template.listClaimedOf(3, address(this)), amount);
+
+        // test deleteList()
+        template.deleteList(3);
+        // No specific revert in canMintList for deleted list, ListClaimSupply is triggered
+        vm.expectRevert(IMintlistExt.ListClaimSupply.selector);
+        template.mint{value: price}(proofList, 3, address(this), 1, address(0));
+    }
+    
     function testMintRevertMintCapReached() public {
         template.unpause();
         template.mint{value: 0.01 ether * 100}(100);
@@ -452,6 +508,66 @@ contract ERC721CrateTest is Test, ERC721Holder {
 
         vm.expectRevert(IBlacklistExt.Blacklisted.selector);
         template.mint{value: price}();
+    }
+
+    function testSetList(
+        bytes32 root,
+        uint256 price,
+        uint32 unit,
+        uint32 userSupply,
+        uint32 maxSupply,
+        uint32 start,
+        uint32 end,
+        bool reserved,
+        bool paused) public {
+        unit = uint32(bound(unit, 1, 100));
+        start = uint32(bound(start, 0, block.timestamp));
+        end = uint32(bound(end, start, start + 1000));
+        maxSupply = uint32(bound(maxSupply, 1, template.maxSupply()));
+        userSupply = uint32(bound(userSupply, 1, maxSupply));
+
+        // test general case
+        template.setList(price, 0, root, userSupply, maxSupply, start,
+            end, unit, reserved, paused);
+        
+        MintList memory list = template.getList(1);
+        assertEq(list.root, root);
+        assertEq(list.price, price);
+        assertEq(list.unit, unit);
+        assertEq(list.userSupply, userSupply);
+        assertEq(list.maxSupply, maxSupply);
+        assertEq(list.start, start);
+        assertEq(list.end, end);
+        assertEq(list.reserved, reserved);
+        assertEq(list.paused, paused);
+    }
+
+    function testSetListEdgeCases(
+        bytes32 root,
+        uint256 price,
+        uint32 unit,
+        uint32 userSupply,
+        uint32 listMaxSupply,
+        uint32 start,
+        uint32 end,
+        bool paused) public {
+        unit = uint32(bound(unit, 1, 100));
+        start = uint32(bound(start, 0, block.timestamp));
+        end = uint32(bound(end, start, start + 1000));
+        uint32 maxSupply = template.maxSupply();
+        listMaxSupply = uint32(bound(listMaxSupply, 2, maxSupply-10));
+        userSupply = uint32(bound(userSupply, 1, listMaxSupply));
+
+        // Note that _reservedSupply is shared among lists
+        // test missing edge cases in _updateReserved()
+        template.setList(price, 0, root, userSupply, listMaxSupply, start,
+            end, unit, true, paused);
+        assertEq(template.getList(1).maxSupply, listMaxSupply);
+        // reserved && listMaxSupply_ > currentListMaxSupply_
+        vm.expectRevert(IMintlistExt.ReservedMaxSupply.selector);
+        template.setList(price, 1, root, userSupply, maxSupply+1, start,
+            end, unit, true, paused);
+        // @TODO: handle remaining cases by getting access to _reservedSupply via deabstracted contract
     }
 
     function testProcessPayment() public {

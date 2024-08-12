@@ -106,17 +106,7 @@ interface IMintlistExt {
     function getList(uint8 listId_)
         external
         view
-        returns (
-            bytes32 root_,
-            uint256 price_,
-            uint32 unit_,
-            uint32 userSupply_,
-            uint32 maxSupply_,
-            uint32 start_,
-            uint32 end_,
-            bool reserved_,
-            bool paused_
-        );
+        returns (MintList memory);
 
     function listClaimedOf(uint8 listId_, address wallet_) external view returns (uint256 claimed_);
 

@@ -54,37 +54,16 @@ abstract contract MintlistExt is IMintlistExt {
 
         if (maxSupply_ < listSupply[listId_]) revert SupplyUnderflow();
 
-        if (end_ != 0 && start_ < end_) revert ListTimestampEnd();
+        if (end_ != 0 && start_ > end_) revert ListTimestampEnd();
     }
 
     function getList(uint8 listId_)
         external
         view
         virtual
-        returns (
-            bytes32 root_,
-            uint256 price_,
-            uint32 unit_,
-            uint32 userSupply_,
-            uint32 maxSupply_,
-            uint32 start_,
-            uint32 end_,
-            bool reserved_,
-            bool paused_
-        )
+        returns (MintList memory)
     {
-        MintList memory list = lists[listId_];
-        return (
-            list.root,
-            list.price,
-            list.unit,
-            list.userSupply,
-            list.maxSupply,
-            list.start,
-            list.end,
-            list.reserved,
-            list.paused
-        );
+        return lists[listId_];
     }
 
     function listClaimedOf(uint8 listId_, address wallet_) external view returns (uint256) {
@@ -134,7 +113,9 @@ abstract contract MintlistExt is IMintlistExt {
         virtual
     {
         _validate(listId_, userSupply_, maxSupply_, unit_, start_, end_);
-        uint8 id = listId_ == 0 ? listIndex++ : listId_; // If listId_ is 0, increment listCount and create new list
+        // If listId_ is 0, increment listCount and create new list
+        // Note that since position 0 has this role, no list should be allocated in lists[0]
+        uint8 id = listId_ == 0 ? ++listIndex : listId_;
 
         MintList storage list = lists[id];
         if (listId_ != 0 && list.userSupply == 0) revert ListDeleted();
