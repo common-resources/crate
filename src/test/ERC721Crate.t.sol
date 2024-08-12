@@ -11,28 +11,32 @@
 pragma solidity ^0.8.26;
 
 import {Core} from "../contracts/Core.sol";
-import {ICore, TransferFailed, NotZero} from "../contracts/ICore.sol";
+
+import {ERC721Crate} from "../contracts/ERC721Crate.sol";
+import {ICore, NotZero, TransferFailed} from "../contracts/ICore.sol";
+import {IBlacklistExt} from "../contracts/extensions/blacklist/IBlacklistExt.sol";
+import {IMintlistExt, MintList} from "../contracts/extensions/lists/IMintlistExt.sol";
+import {IReferralExt} from "../contracts/extensions/referral/IReferralExt.sol";
+import {IRoyaltyExt} from "../contracts/extensions/royalty/IRoyaltyExt.sol";
 import {ICoreMetadata} from "../contracts/metadata/ICoreMetadata.sol";
 import {ICoreMetadata721} from "../contracts/metadata/ICoreMetadata721.sol";
-import {MintList, IMintlistExt} from "../contracts/extensions/lists/IMintlistExt.sol";
-import {IRoyaltyExt} from "../contracts/extensions/royalty/IRoyaltyExt.sol";
-import {IReferralExt} from "../contracts/extensions/referral/IReferralExt.sol";
-import {IBlacklistExt} from "../contracts/extensions/blacklist/IBlacklistExt.sol";
-import {ERC721Crate} from "../contracts/ERC721Crate.sol";
+
 import {MockERC20} from "./utils/MockERC20.sol";
 import {MockERC721} from "./utils/MockERC721.sol";
 
 import {Test} from "forge-std/src/Test.sol";
 import {console} from "forge-std/src/console.sol";
-import {LibString} from "solady/src/utils/LibString.sol";
-import {LibClone} from "solady/src/utils/LibClone.sol";
+
 import {ERC2981} from "solady/src/tokens/ERC2981.sol";
 import {FixedPointMathLib} from "solady/src/utils/FixedPointMathLib.sol";
+import {LibClone} from "solady/src/utils/LibClone.sol";
+import {LibString} from "solady/src/utils/LibString.sol";
 
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import {ERC721} from "solady/src/tokens/ERC721.sol";
-import {Ownable} from "solady/src/auth/Ownable.sol";
+
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {Ownable} from "solady/src/auth/Ownable.sol";
+import {ERC721} from "solady/src/tokens/ERC721.sol";
 
 contract ERC721CrateTest is Test, ERC721Holder {
     using LibString for uint256;
@@ -49,22 +53,16 @@ contract ERC721CrateTest is Test, ERC721Holder {
 
     /**
      * @dev Commutative Keccak256 hash of a sorted pair of bytes32. Frequently used when working with merkle proofs.
-    */
+     */
     function commutativeKeccak256(bytes32 a, bytes32 b) internal pure returns (bytes32) {
         return a < b ? keccak256(bytes.concat(a, b)) : keccak256(bytes.concat(b, a));
     }
+
     function setUp() public {
         masterCopy = new ERC721Crate();
         template = ERC721Crate(payable(LibClone.cloneDeterministic(address(masterCopy), bytes32(0x0))));
         manualInit = ERC721Crate(payable(LibClone.cloneDeterministic(address(masterCopy), bytes32(uint256(0x1)))));
-        template.initialize(
-            "ERC721Crate Test",
-            "ERC721Crate",
-            100,
-            500,
-            address(this),
-            0.01 ether
-        );
+        template.initialize("ERC721Crate Test", "ERC721Crate", 100, 500, address(this), 0.01 ether);
 
         template.setBaseURI("https://miya.wtf/api/", "");
         template.setContractURI("https://miya.wtf/contract.json");
@@ -87,9 +85,13 @@ contract ERC721CrateTest is Test, ERC721Holder {
         uint16 royalty,
         bytes32 ownerSalt,
         uint256 price
-    ) public {
-        vm.assume(bytes(name).length > 0 && bytes(symbol).length > 0 &&
-            bytes(baseURI).length > 0 && bytes(contractURI).length > 0);
+    )
+        public
+    {
+        vm.assume(
+            bytes(name).length > 0 && bytes(symbol).length > 0 && bytes(baseURI).length > 0
+                && bytes(contractURI).length > 0
+        );
 
         address owner = _bytesToAddress(ownerSalt);
 
@@ -103,7 +105,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
             return;
         }
         manualInit.initialize(name, symbol, maxSupply, royalty, owner, price);
-        
+
         vm.startPrank(owner);
         manualInit.setBaseURI(baseURI, "");
         manualInit.setContractURI(contractURI);
@@ -115,16 +117,16 @@ contract ERC721CrateTest is Test, ERC721Holder {
         assertEq(abi.encode(contractURI), abi.encode(manualInit.contractURI()), "contractURI error");
         assertEq(maxSupply, manualInit.maxSupply(), "maxSupply error");
         (, uint256 _royalty) = manualInit.royaltyInfo(0, 1 ether);
-        assertEq(royalty, (_royalty * 10000) / 1 ether, "royalty error");
+        assertEq(royalty, (_royalty * 10_000) / 1 ether, "royalty error");
         assertEq(owner, manualInit.owner(), "owner error");
     }
 
     function testSupportsInterface(bytes4 interfaceId) public view {
         if (
-            interfaceId == 0x2a55205a || // ERC2981
-            interfaceId == 0x80ac58cd || // ERC721
-            interfaceId == 0x5b5e139f || // ERC721
-            interfaceId == 0x01ffc9a7 // ERC165
+            interfaceId == 0x2a55205a // ERC2981
+                || interfaceId == 0x80ac58cd // ERC721
+                || interfaceId == 0x5b5e139f // ERC721
+                || interfaceId == 0x01ffc9a7 // ERC165
         ) assertEq(template.supportsInterface(interfaceId), true, "supportsInterface error");
         else assertEq(template.supportsInterface(interfaceId), false, "supportsInterface error");
     }
@@ -136,19 +138,14 @@ contract ERC721CrateTest is Test, ERC721Holder {
         assertEq(
             keccak256(abi.encodePacked(template.tokenURI(1))),
             keccak256(
-                    abi.encodePacked(string.concat("https://miya.wtf/api/", uint256(template.totalSupply()).toString()))
+                abi.encodePacked(string.concat("https://miya.wtf/api/", uint256(template.totalSupply()).toString()))
             )
         );
 
         // Test setting a custom URI
         template.mint{value: template.price()}(address(this), 1);
         template.setTokenURI(2, "ThisIsATestURI");
-        assertEq(
-            keccak256(abi.encodePacked(template.tokenURI(2))),
-            keccak256(
-                    abi.encodePacked("ThisIsATestURI")
-            )
-        );
+        assertEq(keccak256(abi.encodePacked(template.tokenURI(2))), keccak256(abi.encodePacked("ThisIsATestURI")));
     }
 
     function testTokenURIRevertNotMinted() public {
@@ -164,8 +161,8 @@ contract ERC721CrateTest is Test, ERC721Holder {
     }
 
     function testSetReferralFee(uint16 referralFee, uint16 invalidFee) public {
-        referralFee = uint16(bound(referralFee, 1, 10000));
-        invalidFee = uint16(bound(invalidFee, 10001, type(uint16).max));
+        referralFee = uint16(bound(referralFee, 1, 10_000));
+        invalidFee = uint16(bound(invalidFee, 10_001, type(uint16).max));
 
         template.setReferralFee(referralFee);
 
@@ -198,7 +195,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
     function testFreezeTokenURI() public {
         template.unpause();
         template.mint{value: template.price()}(address(this), 1);
-        
+
         template.freezeURI();
         vm.expectRevert(ICoreMetadata.URIPermanent.selector);
         template.freezeTokenURI(1);
@@ -247,7 +244,9 @@ contract ERC721CrateTest is Test, ERC721Holder {
         bytes32 recipientSalt,
         uint16 referralFee,
         uint256 amount
-    ) public {
+    )
+        public
+    {
         vm.assume(callerSalt != referrerSalt && callerSalt != recipientSalt && referrerSalt != recipientSalt);
         vm.assume(callerSalt != bytes32(""));
         vm.assume(referrerSalt != bytes32(""));
@@ -263,8 +262,8 @@ contract ERC721CrateTest is Test, ERC721Holder {
 
         template.setReferralFee(referralFee);
         template.unpause();
-        
-        uint256 refFee = FixedPointMathLib.mulDivUp(referralFee * amount, price, 10000);
+
+        uint256 refFee = FixedPointMathLib.mulDivUp(referralFee * amount, price, 10_000);
         vm.prank(caller);
         template.mint{value: price * amount}(recipient, amount, referrer);
         assertEq(template.balanceOf(recipient), amount, "balanceOf error");
@@ -274,12 +273,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
         assertEq(address(template).balance, (price * amount) - refFee, "template balance error");
     }
 
-    function testMintWithList(
-        bytes32 proof,
-        uint32 amount,
-        uint32 userSupply,
-        uint32 maxSupply
-    ) public {
+    function testMintWithList(bytes32 proof, uint32 amount, uint32 userSupply, uint32 maxSupply) public {
         maxSupply = uint32(bound(maxSupply, 1, 10));
         userSupply = uint32(bound(userSupply, uint32(1), maxSupply));
         amount = uint32(bound(amount, 1, userSupply));
@@ -293,27 +287,24 @@ contract ERC721CrateTest is Test, ERC721Holder {
         bytes32[] memory proofList = new bytes32[](1);
         proofList[0] = proof;
 
-        template.setList(price, 0, root, userSupply, maxSupply, uint32(block.timestamp),
-            0, 1, true, false);
-        template.mint{value: price*amount}(proofList, 1, address(this), amount, address(0));
+        template.setList(price, 0, root, userSupply, maxSupply, uint32(block.timestamp), 0, 1, true, false);
+        template.mint{value: price * amount}(proofList, 1, address(this), amount, address(0));
         assertEq(template.listClaimedOf(1, address(this)), amount);
 
         // id = 0 signals to create a new list
-        template.setList(price, 0, root, userSupply, maxSupply, uint32(block.timestamp+1000),
-            0, 1, false, false);
+        template.setList(price, 0, root, userSupply, maxSupply, uint32(block.timestamp + 1000), 0, 1, false, false);
         vm.expectRevert(IMintlistExt.ListTimeOutOfBounds.selector);
-        template.mint{value: price*amount}(proofList, 2, address(this), amount, address(0));
+        template.mint{value: price * amount}(proofList, 2, address(this), amount, address(0));
 
         // test pauseList()
-        template.setList(price, 0, root, userSupply, maxSupply, uint32(block.timestamp),
-            0, 1, true, false);
+        template.setList(price, 0, root, userSupply, maxSupply, uint32(block.timestamp), 0, 1, true, false);
         template.pauseList(3);
         vm.expectRevert(IMintlistExt.ListPaused.selector);
-        template.mint{value: price*amount}(proofList, 3, address(this), amount, address(0));
+        template.mint{value: price * amount}(proofList, 3, address(this), amount, address(0));
 
         // test unpauseList()
         template.unpauseList(3);
-        template.mint{value: price*amount}(proofList, 3, address(this), amount, address(0));
+        template.mint{value: price * amount}(proofList, 3, address(this), amount, address(0));
         assertEq(template.listClaimedOf(3, address(this)), amount);
 
         // test deleteList()
@@ -322,7 +313,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
         vm.expectRevert(IMintlistExt.ListClaimSupply.selector);
         template.mint{value: price}(proofList, 3, address(this), 1, address(0));
     }
-    
+
     function testMintRevertMintCapReached() public {
         template.unpause();
         template.mint{value: 0.01 ether * 100}(100);
@@ -337,10 +328,10 @@ contract ERC721CrateTest is Test, ERC721Holder {
     }
 
     function testSetSupply(uint256 amount) public {
-        amount = bound(amount, 1, template.maxSupply()-1);
+        amount = bound(amount, 1, template.maxSupply() - 1);
 
         template.unpause();
-        template.mint{value: amount*template.price()}(amount);
+        template.mint{value: amount * template.price()}(amount);
 
         uint32 maxSupply = template.maxSupply();
         uint32 totalSupply = uint32(template.totalSupply());
@@ -395,7 +386,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
 
     function testWithdrawFundsRevertUnauthorized(bytes32 recipientSalt) public {
         vm.assume(recipientSalt != bytes32(""));
-        
+
         address recipient = _bytesToAddress(recipientSalt);
         uint256 price = template.price();
         template.unpause();
@@ -415,7 +406,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
         template.setRoyalties(recipient, royaltyFee);
 
         (, uint256 royalty) = template.royaltyInfo(1, 1 ether);
-        assertEq(royaltyFee, (royalty * 10000) / 1 ether, "royalty error");
+        assertEq(royaltyFee, (royalty * 10_000) / 1 ether, "royalty error");
 
         vm.expectRevert(IRoyaltyExt.MaxRoyalties.selector);
         template.setRoyalties(recipient, invalidFee);
@@ -425,7 +416,14 @@ contract ERC721CrateTest is Test, ERC721Holder {
         template.setRoyalties(recipient, royaltyFee);
     }
 
-    function testSetTokenRoyalties(uint256 tokenId, bytes32 recipientSalt, uint96 royaltyFee, uint96 invalidFee) public {
+    function testSetTokenRoyalties(
+        uint256 tokenId,
+        bytes32 recipientSalt,
+        uint96 royaltyFee,
+        uint96 invalidFee
+    )
+        public
+    {
         tokenId = bound(tokenId, 1, type(uint40).max);
         vm.assume(recipientSalt != bytes32(""));
         royaltyFee = uint96(bound(royaltyFee, 1, 1000));
@@ -435,7 +433,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
         template.setTokenRoyalties(tokenId, recipient, royaltyFee);
 
         (, uint256 royalty) = template.royaltyInfo(tokenId, 1 ether);
-        assertEq(royaltyFee, (royalty * 10000) / 1 ether, "royalty error");
+        assertEq(royaltyFee, (royalty * 10_000) / 1 ether, "royalty error");
 
         vm.expectRevert(IRoyaltyExt.MaxRoyalties.selector);
         template.setTokenRoyalties(tokenId, recipient, invalidFee);
@@ -460,25 +458,25 @@ contract ERC721CrateTest is Test, ERC721Holder {
         address guardValue = address(0xfbb67fda52d4bfb8bf);
 
         // check that generated list doesn't contain the solady's EnumerableSet guard value
-        for(uint idx; idx<blacklist.length;idx++) {
-            if(blacklist[idx] == guardValue) {
+        for (uint256 idx; idx < blacklist.length; idx++) {
+            if (blacklist[idx] == guardValue) {
                 blacklist[idx] = address(0x1);
             }
         }
 
         // check that stored list is empty at the start
         address[] memory storedBlacklist = template.getBlacklist();
-        for(uint idx; idx<storedBlacklist.length;idx++) {
+        for (uint256 idx; idx < storedBlacklist.length; idx++) {
             assertEq(storedBlacklist[idx], address(0));
         }
-        
+
         // Set blacklist and check that at least one value is different from address(0)
         template.setBlacklist(blacklist, true);
         storedBlacklist = template.getBlacklist();
 
         bool diffZero = false;
-        for(uint idx; idx<storedBlacklist.length;idx++) {
-            if(storedBlacklist[idx] != address(0)) {
+        for (uint256 idx; idx < storedBlacklist.length; idx++) {
+            if (storedBlacklist[idx] != address(0)) {
                 diffZero = true;
                 break;
             }
@@ -489,13 +487,12 @@ contract ERC721CrateTest is Test, ERC721Holder {
         // check that stored list is empty at the end
         template.setBlacklist(blacklist, false);
         storedBlacklist = template.getBlacklist();
-        for(uint idx; idx<storedBlacklist.length;idx++) {
+        for (uint256 idx; idx < storedBlacklist.length; idx++) {
             assertEq(storedBlacklist[idx], address(0));
         }
     }
 
     function testEnforceBlacklist() public {
-
         uint256 price = template.price();
         address[] memory blacklist = new address[](1);
         blacklist[0] = address(template);
@@ -519,7 +516,10 @@ contract ERC721CrateTest is Test, ERC721Holder {
         uint32 start,
         uint32 end,
         bool reserved,
-        bool paused) public {
+        bool paused
+    )
+        public
+    {
         unit = uint32(bound(unit, 1, 100));
         start = uint32(bound(start, 0, block.timestamp));
         end = uint32(bound(end, start, start + 1000));
@@ -527,9 +527,8 @@ contract ERC721CrateTest is Test, ERC721Holder {
         userSupply = uint32(bound(userSupply, 1, maxSupply));
 
         // test general case
-        template.setList(price, 0, root, userSupply, maxSupply, start,
-            end, unit, reserved, paused);
-        
+        template.setList(price, 0, root, userSupply, maxSupply, start, end, unit, reserved, paused);
+
         MintList memory list = template.getList(1);
         assertEq(list.root, root);
         assertEq(list.price, price);
@@ -550,46 +549,44 @@ contract ERC721CrateTest is Test, ERC721Holder {
         uint32 listMaxSupply,
         uint32 start,
         uint32 end,
-        bool paused) public {
+        bool paused
+    )
+        public
+    {
         unit = uint32(bound(unit, 1, 100));
         start = uint32(bound(start, 0, block.timestamp));
         end = uint32(bound(end, start, start + 1000));
         uint32 maxSupply = template.maxSupply();
-        listMaxSupply = uint32(bound(listMaxSupply, 2, maxSupply-10));
+        listMaxSupply = uint32(bound(listMaxSupply, 2, maxSupply - 10));
         userSupply = uint32(bound(userSupply, 1, listMaxSupply));
 
         // Note that _reservedSupply is shared among lists
         // test missing edge cases in _updateReserved()
-        template.setList(price, 0, root, userSupply, listMaxSupply, start,
-            end, unit, true, paused);
+        template.setList(price, 0, root, userSupply, listMaxSupply, start, end, unit, true, paused);
         assertEq(template.getList(1).maxSupply, listMaxSupply);
         // reserved && listMaxSupply_ > currentListMaxSupply_
         vm.expectRevert(IMintlistExt.ReservedMaxSupply.selector);
-        template.setList(price, 1, root, userSupply, maxSupply+1, start,
-            end, unit, true, paused);
+        template.setList(price, 1, root, userSupply, maxSupply + 1, start, end, unit, true, paused);
         // @TODO: handle remaining cases by getting access to _reservedSupply via deabstracted contract
     }
 
     function testProcessPayment() public {
-
         bool success;
         uint256 price = template.price();
         uint256 maxSupply = template.maxSupply();
 
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        (success, ) = payable(address(template)).call{value: 1 ether}("");
+        (success,) = payable(address(template)).call{value: 1 ether}("");
 
         template.unpause();
 
-        (success, ) = payable(address(template)).call{value: price * (maxSupply-10)}("");
+        (success,) = payable(address(template)).call{value: price * (maxSupply - 10)}("");
         assertTrue(success);
         assertGt(template.balanceOf(address(this)), 0);
 
         // Test condition using reservedSupply from mintlist
-        template.setList(price, 0, "", 1, 10, uint32(block.timestamp), 0, 1,
-            true, false);
-        (success, ) = payable(address(template)).call{value: price}("");
-        assertEq(address(template).balance, price * (maxSupply-10));
+        template.setList(price, 0, "", 1, 10, uint32(block.timestamp), 0, 1, true, false);
+        (success,) = payable(address(template)).call{value: price}("");
+        assertEq(address(template).balance, price * (maxSupply - 10));
     }
-
 }

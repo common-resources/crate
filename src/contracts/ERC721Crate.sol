@@ -343,8 +343,7 @@ contract ERC721Crate is Initializable, CoreMetadata721, BlacklistExt, MintlistEx
     function _processPayment() internal virtual override {
         bool mintedOut = (_totalSupply + _reservedSupply) == maxSupply;
         if (mintedOut) {
-            Core._processPayment();
-            return;
+            return Core._processPayment();
         }
 
         if (paused()) revert EnforcedPause();

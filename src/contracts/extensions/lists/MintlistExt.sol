@@ -57,12 +57,7 @@ abstract contract MintlistExt is IMintlistExt {
         if (end_ != 0 && start_ > end_) revert ListTimestampEnd();
     }
 
-    function getList(uint8 listId_)
-        external
-        view
-        virtual
-        returns (MintList memory)
-    {
+    function getList(uint8 listId_) external view virtual returns (MintList memory) {
         return lists[listId_];
     }
 

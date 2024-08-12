@@ -17,7 +17,6 @@ pragma solidity ^0.8.26;
  * @notice Minimal "token-types"-like interface for token assets with a balance.
  * @custom:github https://github.com/common-resources/crate
  */
-
 type Asset is address;
 
 using {

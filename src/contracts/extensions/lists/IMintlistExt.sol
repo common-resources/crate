@@ -103,10 +103,7 @@ interface IMintlistExt {
 
     function listIndex() external view returns (uint8);
 
-    function getList(uint8 listId_)
-        external
-        view
-        returns (MintList memory);
+    function getList(uint8 listId_) external view returns (MintList memory);
 
     function listClaimedOf(uint8 listId_, address wallet_) external view returns (uint256 claimed_);
 

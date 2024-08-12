@@ -11,7 +11,7 @@
 pragma solidity ^0.8.26;
 
 import {Core} from "../contracts/Core.sol";
-import {ICore, TransferFailed, NotZero} from "../contracts/ICore.sol";
+import {ICore, NotZero, TransferFailed} from "../contracts/ICore.sol";
 
 import {MockERC20} from "./utils/MockERC20.sol";
 import {MockERC721} from "./utils/MockERC721.sol";
@@ -19,8 +19,8 @@ import {MockERC721} from "./utils/MockERC721.sol";
 import {Test} from "forge-std/src/Test.sol";
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 
-import {Ownable} from "solady/src/auth/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {Ownable} from "solady/src/auth/Ownable.sol";
 
 contract CoreDeabstracted is Core {
     constructor() {
@@ -48,7 +48,6 @@ contract CoreTest is Test {
     }
 
     function testPause() public {
-
         // only owner address(this) should be able to call this
         vm.prank(mockOne);
         vm.expectRevert(Ownable.Unauthorized.selector);
@@ -59,7 +58,6 @@ contract CoreTest is Test {
     }
 
     function testUnpause() public {
-
         // only owner address(this) should be able to call this
         vm.prank(mockOne);
         vm.expectRevert(Ownable.Unauthorized.selector);
@@ -71,7 +69,6 @@ contract CoreTest is Test {
     }
 
     function testSetPrice() public {
-
         // only owner address(this) should be able to call this
         vm.prank(mockOne);
         vm.expectRevert(Ownable.Unauthorized.selector);
@@ -82,14 +79,13 @@ contract CoreTest is Test {
     }
 
     function testSetMintPeriod() public {
-
         // only owner address(this) should be able to call this
         vm.prank(mockOne);
         vm.expectRevert(Ownable.Unauthorized.selector);
         core.setMintPeriod(0, 0);
 
         // Set start to something other than 0
-        vm.warp(1641070800);
+        vm.warp(1_641_070_800);
         uint32 ts = uint32(block.timestamp);
         vm.expectRevert(ICore.TimestampEnd.selector);
         core.setMintPeriod(ts, ts - 1);
@@ -100,7 +96,6 @@ contract CoreTest is Test {
     }
 
     function testSetClaimableUserSupply() public {
-
         // only owner address(this) should be able to call this
         vm.prank(mockOne);
         vm.expectRevert(Ownable.Unauthorized.selector);
@@ -114,7 +109,6 @@ contract CoreTest is Test {
     }
 
     function testSetUnit() public {
-
         // only owner address(this) should be able to call this
         vm.prank(mockOne);
         vm.expectRevert(Ownable.Unauthorized.selector);
@@ -135,14 +129,13 @@ contract CoreTest is Test {
     }
 
     function testWithdraw() public {
-
         vm.deal(address(core), 1 ether);
 
         vm.prank(mockOne);
         // Unauthorized
         vm.expectRevert(Ownable.Unauthorized.selector);
         core.withdraw(mockOne, 1 ether);
-        
+
         core.withdraw(mockOne, 1.1 ether);
         assertEq(address(core).balance, 0);
     }
