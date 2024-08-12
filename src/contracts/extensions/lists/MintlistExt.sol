@@ -54,7 +54,7 @@ abstract contract MintlistExt is IMintlistExt {
 
         if (maxSupply_ < listSupply[listId_]) revert SupplyUnderflow();
 
-        if (end_ != 0 && start_ < end_) revert ListTimestampEnd();
+        if (end_ != 0 && start_ > end_) revert ListTimestampEnd();
     }
 
     function getList(uint8 listId_)
