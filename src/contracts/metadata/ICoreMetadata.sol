@@ -21,7 +21,7 @@ interface ICoreMetadata {
      * @dev Emitted when the contract metadata is updated.
      * @param uri_ The new contract metadata URI.
      */
-    event ContractURIUpdated(string indexed uri_);
+    event ContractURIUpdated(string uri_);
 
     // @TODO document
     event URI(string value_, uint256 tokenId_);
@@ -31,7 +31,7 @@ interface ICoreMetadata {
      * @param baseURI_ The new base metadata URI.
      * @param fileExtension_ The new file extension.
      */
-    event BaseURIUpdate(string indexed baseURI_, string indexed fileExtension_);
+    event BaseURIUpdate(string baseURI_, string fileExtension_);
 
     /**
      * @dev Emitted when a permanent URI is set for a specific token ID.

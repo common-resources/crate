@@ -55,7 +55,7 @@ interface ICore {
      * @param symbol_ The symbol of the nft contract.
      * @custom:unique
      */
-    event ContractCreated(string indexed name_, string indexed symbol_);
+    event ContractCreated(string name_, string symbol_);
 
     /**
      * @dev Emitted when the price is updated.
