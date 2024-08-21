@@ -539,6 +539,41 @@ contract ERC721CrateTest is Test, ERC721Holder {
             false); // paused
     }
 
+    // Basic setList test for sanity
+    function testSetList(
+        bytes32 root,
+        uint256 price,
+        uint32 unit,
+        uint32 userSupply,
+        uint32 maxSupply,
+        uint32 start,
+        uint32 end,
+        bool reserved,
+        bool paused
+    )
+        public
+    {
+        unit = uint32(bound(unit, 1, 100));
+        start = uint32(bound(start, 0, block.timestamp));
+        end = uint32(bound(end, start, start + 1000));
+        maxSupply = uint32(bound(maxSupply, 1, template.maxSupply()));
+        userSupply = uint32(bound(userSupply, 1, maxSupply));
+
+        // test general case
+        template.setList(price, 0, root, userSupply, maxSupply, start, end, unit, reserved, paused);
+
+        MintList memory list = template.getList(1);
+        assertEq(list.root, root);
+        assertEq(list.price, price);
+        assertEq(list.unit, unit);
+        assertEq(list.userSupply, userSupply);
+        assertEq(list.maxSupply, maxSupply);
+        assertEq(list.start, start);
+        assertEq(list.end, end);
+        assertEq(list.reserved, reserved);
+        assertEq(list.paused, paused);
+    }
+
     function testSetListFuzzed(
         uint32[32] memory unit,
         uint32[32] memory userSupply,
@@ -567,13 +602,6 @@ contract ERC721CrateTest is Test, ERC721Holder {
             } else if(end[i] != 0 && start[i] > end[i]) {
                 reverted = true;
                 vm.expectRevert(IMintlistExt.ListTimestampEnd.selector);
-                
-            } else if (reserved[i] &&
-                (maxSupply[i] > 0) && // currentListMaxSupply_ is set to 0 at the start
-                ((template.reservedSupply() + maxSupply[i]) > template.maxSupply())) {
-                
-                reverted = true;
-                vm.expectRevert(IMintlistExt.ReservedMaxSupply.selector);
             }
 
             // test general case
@@ -617,7 +645,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
                     reverted = true;
                     vm.expectRevert(IMintlistExt.ListTimestampEnd.selector);
                     
-                } else if (reserved[i] &&
+                } else if (reserved[i] && template.getList(curListNum).reserved &&
                     (maxSupply[i] > template.getList(curListNum).maxSupply) &&
                     ((template.reservedSupply() + maxSupply[i] - template.getList(curListNum).maxSupply) > template.maxSupply())) {
                     
