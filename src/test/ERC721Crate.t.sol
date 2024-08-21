@@ -38,12 +38,22 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {Ownable} from "solady/src/auth/Ownable.sol";
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 
+contract ERC721CrateDeabstracted is ERC721Crate {
+    constructor() {
+        _setOwner(msg.sender);
+    }
+
+    function reservedSupply() public view returns (uint32) {
+        return _reservedSupply;
+    }
+}
+
 contract ERC721CrateTest is Test, ERC721Holder {
     using LibString for uint256;
 
-    ERC721Crate public masterCopy;
-    ERC721Crate public template;
-    ERC721Crate public manualInit;
+    ERC721CrateDeabstracted public masterCopy;
+    ERC721CrateDeabstracted public template;
+    ERC721CrateDeabstracted public manualInit;
     MockERC20 public testToken;
     MockERC721 public testNFT;
 
@@ -59,9 +69,9 @@ contract ERC721CrateTest is Test, ERC721Holder {
     }
 
     function setUp() public {
-        masterCopy = new ERC721Crate();
-        template = ERC721Crate(payable(LibClone.cloneDeterministic(address(masterCopy), bytes32(0x0))));
-        manualInit = ERC721Crate(payable(LibClone.cloneDeterministic(address(masterCopy), bytes32(uint256(0x1)))));
+        masterCopy = new ERC721CrateDeabstracted();
+        template = ERC721CrateDeabstracted(payable(LibClone.cloneDeterministic(address(masterCopy), bytes32(0x0))));
+        manualInit = ERC721CrateDeabstracted(payable(LibClone.cloneDeterministic(address(masterCopy), bytes32(uint256(0x1)))));
         template.initialize("ERC721Crate Test", "ERC721Crate", 100, 500, address(this), 0.01 ether);
 
         template.setBaseURI("https://miya.wtf/api/", "");
@@ -466,9 +476,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
 
         // check that stored list is empty at the start
         address[] memory storedBlacklist = template.getBlacklist();
-        for (uint256 idx; idx < storedBlacklist.length; idx++) {
-            assertEq(storedBlacklist[idx], address(0));
-        }
+        assertEq(storedBlacklist.length, 0);
 
         // Set blacklist and check that at least one value is different from address(0)
         template.setBlacklist(blacklist, true);
@@ -507,68 +515,131 @@ contract ERC721CrateTest is Test, ERC721Holder {
         template.mint{value: price}();
     }
 
-    function testSetList(
-        bytes32 root,
-        uint256 price,
+    // Used to avoid stack limitations
+    function _helperTestSetList(
+        uint8 listId,
         uint32 unit,
         uint32 userSupply,
         uint32 maxSupply,
         uint32 start,
         uint32 end,
-        bool reserved,
-        bool paused
+        bool reserved
+    ) private {
+
+        template.setList(
+            1, // price
+            listId,
+            0, // root
+            userSupply,
+            maxSupply,
+            start,
+            end,
+            unit,
+            reserved,
+            false); // paused
+    }
+
+    function testSetListFuzzed(
+        uint32[32] memory unit,
+        uint32[32] memory userSupply,
+        uint32[32] memory maxSupply,
+        uint32[32] memory start,
+        uint32[32] memory end,
+        bool[32] memory reserved
     )
         public
     {
-        unit = uint32(bound(unit, 1, 100));
-        start = uint32(bound(start, 0, block.timestamp));
-        end = uint32(bound(end, start, start + 1000));
-        maxSupply = uint32(bound(maxSupply, 1, template.maxSupply()));
-        userSupply = uint32(bound(userSupply, 1, maxSupply));
+        bool reverted = false;
+        // price, root and paused do not matter for this test
+        // Bound the values inplace to avoid stack issues
+        for(uint256 i=0;i<32;i++) {
 
-        // test general case
-        template.setList(price, 0, root, userSupply, maxSupply, start, end, unit, reserved, paused);
+            // W/o this bound, an overflow can be caused
+            maxSupply[i] = uint32(bound(maxSupply[i], 0, 10000));
+            userSupply[i] = uint32(bound(userSupply[i], 0, 10000));
 
-        MintList memory list = template.getList(1);
-        assertEq(list.root, root);
-        assertEq(list.price, price);
-        assertEq(list.unit, unit);
-        assertEq(list.userSupply, userSupply);
-        assertEq(list.maxSupply, maxSupply);
-        assertEq(list.start, start);
-        assertEq(list.end, end);
-        assertEq(list.reserved, reserved);
-        assertEq(list.paused, paused);
+            // Init the lists and check them
+
+            if(maxSupply[i] == 0 || userSupply[i] == 0 || unit[i] == 0) {
+                reverted = true;
+                vm.expectRevert(NotZero.selector);
+
+            } else if(end[i] != 0 && start[i] > end[i]) {
+                reverted = true;
+                vm.expectRevert(IMintlistExt.ListTimestampEnd.selector);
+                
+            } else if (reserved[i] &&
+                (maxSupply[i] > 0) && // currentListMaxSupply_ is set to 0 at the start
+                ((template.reservedSupply() + maxSupply[i]) > template.maxSupply())) {
+                
+                reverted = true;
+                vm.expectRevert(IMintlistExt.ReservedMaxSupply.selector);
+            }
+
+            // test general case
+            _helperTestSetList(
+                0, // list id to create a new list
+                unit[i],
+                userSupply[i],
+                maxSupply[i],
+                start[i],
+                end[i],
+                reserved[i]
+            );
+
+            if(!reverted) {
+                assertEq(template.getList(template.listIndex()).root, 0);
+                assertEq(template.getList(template.listIndex()).price, 1);
+                assertEq(template.getList(template.listIndex()).unit, unit[i]);
+                assertEq(template.getList(template.listIndex()).userSupply, userSupply[i]);
+                assertEq(template.getList(template.listIndex()).maxSupply, maxSupply[i]);
+                assertEq(template.getList(template.listIndex()).start, start[i]);
+                assertEq(template.getList(template.listIndex()).end, end[i]);
+                assertEq(template.getList(template.listIndex()).reserved, reserved[i]);
+                assertEq(template.getList(template.listIndex()).paused, false);
+            }
+        }
+
+        for(uint256 i=0;i<32;i++){
+            for(uint8 curListNum=1;curListNum<template.listIndex();curListNum++) {
+
+                // Modify the lists and check for reverts
+
+                if(maxSupply[i] == 0 || userSupply[i] == 0 || unit[i] == 0) {
+                    reverted = true;
+                    vm.expectRevert(NotZero.selector);
+
+                } else if(maxSupply[i] < template.listSupply(curListNum)) {
+                    reverted = true;
+                    vm.expectRevert(IMintlistExt.SupplyUnderflow.selector);
+                
+                } else if(end[i] != 0 && start[i] > end[i]) {
+                    reverted = true;
+                    vm.expectRevert(IMintlistExt.ListTimestampEnd.selector);
+                    
+                } else if (reserved[i] &&
+                    (maxSupply[i] > template.getList(curListNum).maxSupply) &&
+                    ((template.reservedSupply() + maxSupply[i] - template.getList(curListNum).maxSupply) > template.maxSupply())) {
+                    
+                    reverted = true;
+                    vm.expectRevert(IMintlistExt.ReservedMaxSupply.selector);
+                }
+
+                // test general case
+                _helperTestSetList(
+                    curListNum,
+                    unit[i],
+                    userSupply[i],
+                    maxSupply[i],
+                    start[i],
+                    end[i],
+                    reserved[i]
+                );
+            }
+        }
     }
 
-    function testSetListEdgeCases(
-        bytes32 root,
-        uint256 price,
-        uint32 unit,
-        uint32 userSupply,
-        uint32 listMaxSupply,
-        uint32 start,
-        uint32 end,
-        bool paused
-    )
-        public
-    {
-        unit = uint32(bound(unit, 1, 100));
-        start = uint32(bound(start, 0, block.timestamp));
-        end = uint32(bound(end, start, start + 1000));
-        uint32 maxSupply = template.maxSupply();
-        listMaxSupply = uint32(bound(listMaxSupply, 2, maxSupply - 10));
-        userSupply = uint32(bound(userSupply, 1, listMaxSupply));
-
-        // Note that _reservedSupply is shared among lists
-        // test missing edge cases in _updateReserved()
-        template.setList(price, 0, root, userSupply, listMaxSupply, start, end, unit, true, paused);
-        assertEq(template.getList(1).maxSupply, listMaxSupply);
-        // reserved && listMaxSupply_ > currentListMaxSupply_
-        vm.expectRevert(IMintlistExt.ReservedMaxSupply.selector);
-        template.setList(price, 1, root, userSupply, maxSupply + 1, start, end, unit, true, paused);
-        // @TODO: handle remaining cases by getting access to _reservedSupply via deabstracted contract
-    }
+    // @TODO: need to add a complex test with lists + mint
 
     function testProcessPayment() public {
         bool success;
