@@ -674,7 +674,30 @@ contract ERC721CrateTest is Test, ERC721Holder {
         }
     }
 
-    // @TODO: need to add a complex test with lists + mint
+    function testSetListAndMint(bytes32 proof) public {
+        template.setSupply(20);
+        uint32 listMaxSupply = 10;
+        bytes32 leaf = keccak256(bytes.concat(keccak256(bytes.concat(abi.encode(address(this))))));
+        bytes32 root = commutativeKeccak256(leaf, proof);
+        template.setList(
+            1, // price
+            0,
+            root, // root
+            10,
+            listMaxSupply,
+            0,
+            0,
+            1,
+            true,
+            false
+        ); // paused
+        // Note: mininting using lists only cares if the list is paused, not if the Crate as a whole is
+        bytes32[] memory proofList = new bytes32[](1);
+        proofList[0] = proof;
+        template.mint{value: 10}(proofList, 1, address(this), 10, address(0));
+        template.unpause();
+        template.mint{value: 10 * template.price()}(10);
+    }
 
     function testProcessPayment() public {
         bool success;
