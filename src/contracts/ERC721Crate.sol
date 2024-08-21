@@ -201,6 +201,7 @@ contract ERC721Crate is Initializable, CoreMetadata721, BlacklistExt, MintlistEx
 
         if (_totalSupply + tokenAmount > maxSupply) revert MaxSupply();
 
+        // If the reserved supply of the list is deactivated
         if (!reserved) _requireUnreservedSupply(tokenAmount, _totalSupply, maxSupply);
 
         _mintBatch(recipient_, tokenAmount);
