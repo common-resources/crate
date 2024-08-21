@@ -15,10 +15,14 @@ pragma solidity ^0.8.26;
  *
  * This struct contains the following fields:
  * @param root The root hash of the merkle tree.
- * @param issued The number of tokens already issued.
- * @param claimed The number of tokens that can be claimed by a single address.
- * @param supply The total supply of tokens.
  * @param price The price of each token.
+ * @param unit The number of units that makeup a token.
+ * @param userSupply The max number of tokens that each user can mint.
+ * @param maxSupply The max number of tokens that can be minted by the lsit.
+ * @param start The Unix epoch at which the list starts.
+ * @param end The Unix epoch at which the list ends.
+ * @param reserved Set aside the maxSupply of this token as reserved.
+ * @param paused Pause the list and prevent new mints.
  */
 struct MintList {
     bytes32 root;
