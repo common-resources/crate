@@ -77,15 +77,20 @@ abstract contract MintlistExt is IMintlistExt {
         virtual
     {
         unchecked {
-            if (reserved_) {
+            if (reserved_ && currentReserved_) {
                 if (listMaxSupply_ > currentListMaxSupply_) {
                     _reservedSupply += listMaxSupply_ - currentListMaxSupply_;
                     if (_reservedSupply > maxSupply_) revert ReservedMaxSupply();
                 } else {
                     _reservedSupply -= currentListMaxSupply_ - listMaxSupply_;
                 }
+                return;
+            }
+
+            uint32 alreadyMinted = listSupply[listId_];
+            if (reserved_) {
+                _reservedSupply += listMaxSupply_ - alreadyMinted;
             } else if (currentReserved_) {
-                uint32 alreadyMinted = listSupply[listId_];
                 _reservedSupply -= currentListMaxSupply_ - alreadyMinted;
             }
         }
