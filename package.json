@@ -1,5 +1,5 @@
 {
-  "name": "crate",
+  "name": "@common-resources/crate",
   "version": "0.1.0",
   "contributors": [
     {
@@ -28,7 +28,7 @@
     "slither": "pipx run --spec slither-analyzer slither . --skip-assembly --include-paths ./src/contracts",
     "test": "forge test --gas-report",
     "test:coverage": "forge coverage --nmco '.*\\.(t|s)\\.sol$'",
-    "test:coverage:report": "forge coverage --nmco '.*\\.(t|s)\\.sol$' --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage --rc derive_function_end_line=0" 
+    "test:coverage:report": "forge coverage --nmco '.*\\.(t|s)\\.sol$' --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage --rc derive_function_end_line=0"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.2",
