@@ -539,7 +539,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
             false); // paused
     }
 
-    // Basic setList test for sanity
+    // Basic setList test with 1 list for sanity
     function testSetList(
         bytes32 root,
         uint256 price,
@@ -548,33 +548,40 @@ contract ERC721CrateTest is Test, ERC721Holder {
         uint32 maxSupply,
         uint32 start,
         uint32 end,
-        bool reserved,
-        bool paused
+        bool reserved
     )
         public
     {
-        unit = uint32(bound(unit, 1, 100));
-        start = uint32(bound(start, 0, block.timestamp));
-        end = uint32(bound(end, start, start + 1000));
+        bool reverted = false;
         maxSupply = uint32(bound(maxSupply, 1, template.maxSupply()));
         userSupply = uint32(bound(userSupply, 1, maxSupply));
 
-        // test general case
-        template.setList(price, 0, root, userSupply, maxSupply, start, end, unit, reserved, paused);
+        if(maxSupply == 0 || userSupply == 0 || unit == 0) {
+            reverted = true;
+            vm.expectRevert(NotZero.selector);
 
-        MintList memory list = template.getList(1);
-        assertEq(list.root, root);
-        assertEq(list.price, price);
-        assertEq(list.unit, unit);
-        assertEq(list.userSupply, userSupply);
-        assertEq(list.maxSupply, maxSupply);
-        assertEq(list.start, start);
-        assertEq(list.end, end);
-        assertEq(list.reserved, reserved);
-        assertEq(list.paused, paused);
+        } else if(end != 0 && start > end) {
+            reverted = true;
+            vm.expectRevert(IMintlistExt.ListTimestampEnd.selector);
+        }
+
+        // test general case
+        template.setList(price, 0, root, userSupply, maxSupply, start, end, unit, reserved, false);
+
+        if(!reverted) {
+            MintList memory list = template.getList(1);
+            assertEq(list.root, root);
+            assertEq(list.price, price);
+            assertEq(list.unit, unit);
+            assertEq(list.userSupply, userSupply);
+            assertEq(list.maxSupply, maxSupply);
+            assertEq(list.start, start);
+            assertEq(list.end, end);
+            assertEq(list.reserved, reserved);
+        }
     }
 
-    function testSetListFuzzed(
+    function testFuzzedSetList(
         uint32[32] memory unit,
         uint32[32] memory userSupply,
         uint32[32] memory maxSupply,
