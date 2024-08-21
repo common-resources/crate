@@ -17,6 +17,6 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           scope: "@common-resources"
       - run: yarn install --frozen-lockfile
-      - run: npm publish --provenance --access public
+      - run: yarn publish --scope=@common-resources
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
