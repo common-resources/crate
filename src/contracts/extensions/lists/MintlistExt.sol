@@ -68,9 +68,9 @@ abstract contract MintlistExt is IMintlistExt {
     function _updateReserved(
         uint8 listId_,
         bool oldReserved_,
-        bool newReserved_,
+        bool reserved_,
         uint32 oldListMaxSupply_,
-        uint32 newListMaxSupply_,
+        uint32 listMaxSupply_,
         uint32 contractMaxSupply_
     )
         internal
@@ -78,19 +78,19 @@ abstract contract MintlistExt is IMintlistExt {
     {
         unchecked {
 
-            if (newReserved_ && oldReserved_) {
-                if (newListMaxSupply_ > oldListMaxSupply_) {
-                    _reservedSupply += newListMaxSupply_ - oldListMaxSupply_;
+            if (reserved_ && oldReserved_) {
+                if (listMaxSupply_ > oldListMaxSupply_) {
+                    _reservedSupply += listMaxSupply_ - oldListMaxSupply_;
                     if (_reservedSupply > contractMaxSupply_) revert ReservedMaxSupply();
                 } else {
-                    _reservedSupply -= oldListMaxSupply_ - newListMaxSupply_;
+                    _reservedSupply -= oldListMaxSupply_ - listMaxSupply_;
                 }
                 return;
             }
 
             uint32 alreadyMinted = listSupply[listId_];
-            if (newReserved_) {
-                _reservedSupply += newListMaxSupply_ - alreadyMinted;
+            if (reserved_) {
+                _reservedSupply += listMaxSupply_ - alreadyMinted;
             } else if (oldReserved_) {
                 // When disabling reserved supply of the list, don't remove the amount already minted
                 // oldListMaxSupply_ - alreadyMinted is always >= 0 since maxSupply is a limit for mint
