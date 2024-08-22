@@ -46,6 +46,10 @@ contract ERC721CrateDeabstracted is ERC721Crate {
     function reservedSupply() public view returns (uint32) {
         return _reservedSupply;
     }
+
+    function claimedList(uint8 listId, address wallet) public view returns (uint256) {
+        return _claimedList[listId][wallet];
+    }
 }
 
 contract ERC721CrateTest is Test, ERC721Holder {
@@ -515,30 +519,6 @@ contract ERC721CrateTest is Test, ERC721Holder {
         template.mint{value: price}();
     }
 
-    // Used to avoid stack limitations
-    function _helperTestSetList(
-        uint8 listId,
-        uint32 unit,
-        uint32 userSupply,
-        uint32 maxSupply,
-        uint32 start,
-        uint32 end,
-        bool reserved
-    ) private {
-
-        template.setList(
-            1, // price
-            listId,
-            0, // root
-            userSupply,
-            maxSupply,
-            start,
-            end,
-            unit,
-            reserved,
-            false); // paused
-    }
-
     // Basic setList test with 1 list for sanity
     function testSetList(
         bytes32 root,
@@ -581,122 +561,177 @@ contract ERC721CrateTest is Test, ERC721Holder {
         }
     }
 
+    // Used to avoid stack limitations
+    function _helperFuzzedTestSetList(
+        uint8 listId,
+        uint32 unit,
+        uint32 userSupply,
+        uint32 maxSupply,
+        uint32 start,
+        uint32 end,
+        bool reserved
+    ) private {
+
+        template.setList(
+            1, // price
+            listId,
+            0, // root
+            userSupply,
+            maxSupply,
+            start,
+            end,
+            unit,
+            reserved,
+            false); // paused
+    }
+
+    function _helperSetList(
+        uint32 unit,
+        uint32 userSupply,
+        uint32 maxSupply,
+        uint32 start,
+        uint32 end,
+        bool reserved,
+        uint8 listId
+    ) private returns (bool) {
+
+        bool reverted = false;
+        
+        // W/o this bound, an overflow can be caused
+        maxSupply = uint32(bound(maxSupply, 0, 1000));
+        userSupply = uint32(bound(userSupply, 0, 1000));
+
+        // Modify the lists and check for reverts
+
+        if(maxSupply == 0 || userSupply == 0 || unit == 0) {
+            reverted = true;
+            vm.expectRevert(NotZero.selector);
+
+        } else if(maxSupply < template.listSupply(listId)) {
+            reverted = true;
+            vm.expectRevert(IMintlistExt.SupplyUnderflow.selector);
+        
+        } else if(end != 0 && start > end) {
+            reverted = true;
+            vm.expectRevert(IMintlistExt.ListTimestampEnd.selector);
+            
+        } else if (listId != 0 && reserved &&
+            template.getList(listId).reserved &&
+            (maxSupply > template.getList(listId).maxSupply) &&
+            ((template.reservedSupply() + maxSupply - template.getList(listId).maxSupply) > template.maxSupply())) {
+            
+            reverted = true;
+            vm.expectRevert(IMintlistExt.ReservedMaxSupply.selector);
+        }
+
+        _helperFuzzedTestSetList(
+            listId,
+            unit,
+            userSupply,
+            maxSupply,
+            start,
+            end,
+            reserved
+        );
+
+        if(!reverted && listId != 0) {
+            assertEq(template.getList(listId).root, 0);
+            assertEq(template.getList(listId).price, 1);
+            assertEq(template.getList(listId).unit, unit);
+            assertEq(template.getList(listId).userSupply, userSupply);
+            assertEq(template.getList(listId).maxSupply, maxSupply);
+            assertEq(template.getList(listId).start, start);
+            assertEq(template.getList(listId).end, end);
+            assertEq(template.getList(listId).reserved, reserved);
+            assertEq(template.getList(listId).paused, false);
+        }
+
+        return reverted;
+    }
+
     function testFuzzedSetList(
-        uint32[32] memory unit,
-        uint32[32] memory userSupply,
-        uint32[32] memory maxSupply,
-        uint32[32] memory start,
-        uint32[32] memory end,
-        bool[32] memory reserved
+        uint32[16] memory unit,
+        uint32[16] memory userSupply,
+        uint32[16] memory maxSupply,
+        uint32[16] memory start,
+        uint32[16] memory end,
+        bool[16] memory reserved
     )
         public
     {
-        bool reverted = false;
-        // price, root and paused do not matter for this test
-        // Bound the values inplace to avoid stack issues
-        for(uint256 i=0;i<32;i++) {
+        uint32 numElems = 16;
+        
+        for(uint256 i=0;i<numElems;i++) {
 
-            // W/o this bound, an overflow can be caused
-            maxSupply[i] = uint32(bound(maxSupply[i], 0, 10000));
-            userSupply[i] = uint32(bound(userSupply[i], 0, 10000));
-
-            // Init the lists and check them
-
-            if(maxSupply[i] == 0 || userSupply[i] == 0 || unit[i] == 0) {
-                reverted = true;
-                vm.expectRevert(NotZero.selector);
-
-            } else if(end[i] != 0 && start[i] > end[i]) {
-                reverted = true;
-                vm.expectRevert(IMintlistExt.ListTimestampEnd.selector);
-            }
-
-            // test general case
-            _helperTestSetList(
-                0, // list id to create a new list
+            _helperSetList(
                 unit[i],
                 userSupply[i],
                 maxSupply[i],
                 start[i],
                 end[i],
-                reserved[i]
+                reserved[i],
+                0
             );
-
-            if(!reverted) {
-                assertEq(template.getList(template.listIndex()).root, 0);
-                assertEq(template.getList(template.listIndex()).price, 1);
-                assertEq(template.getList(template.listIndex()).unit, unit[i]);
-                assertEq(template.getList(template.listIndex()).userSupply, userSupply[i]);
-                assertEq(template.getList(template.listIndex()).maxSupply, maxSupply[i]);
-                assertEq(template.getList(template.listIndex()).start, start[i]);
-                assertEq(template.getList(template.listIndex()).end, end[i]);
-                assertEq(template.getList(template.listIndex()).reserved, reserved[i]);
-                assertEq(template.getList(template.listIndex()).paused, false);
-            }
         }
 
-        for(uint256 i=0;i<32;i++){
+        for(uint256 i=0;i<numElems;i++){
             for(uint8 curListNum=1;curListNum<template.listIndex();curListNum++) {
 
-                // Modify the lists and check for reverts
-
-                if(maxSupply[i] == 0 || userSupply[i] == 0 || unit[i] == 0) {
-                    reverted = true;
-                    vm.expectRevert(NotZero.selector);
-
-                } else if(maxSupply[i] < template.listSupply(curListNum)) {
-                    reverted = true;
-                    vm.expectRevert(IMintlistExt.SupplyUnderflow.selector);
-                
-                } else if(end[i] != 0 && start[i] > end[i]) {
-                    reverted = true;
-                    vm.expectRevert(IMintlistExt.ListTimestampEnd.selector);
-                    
-                } else if (reserved[i] && template.getList(curListNum).reserved &&
-                    (maxSupply[i] > template.getList(curListNum).maxSupply) &&
-                    ((template.reservedSupply() + maxSupply[i] - template.getList(curListNum).maxSupply) > template.maxSupply())) {
-                    
-                    reverted = true;
-                    vm.expectRevert(IMintlistExt.ReservedMaxSupply.selector);
-                }
-
-                // test general case
-                _helperTestSetList(
-                    curListNum,
+                _helperSetList(
                     unit[i],
                     userSupply[i],
                     maxSupply[i],
                     start[i],
                     end[i],
-                    reserved[i]
+                    reserved[i],
+                    curListNum
                 );
             }
         }
+        
     }
 
-    function testSetListAndMint(bytes32 proof) public {
-        template.setSupply(20);
-        uint32 listMaxSupply = 10;
-        bytes32 leaf = keccak256(bytes.concat(keccak256(bytes.concat(abi.encode(address(this))))));
-        bytes32 root = commutativeKeccak256(leaf, proof);
-        template.setList(
-            1, // price
-            0,
-            root, // root
-            10,
-            listMaxSupply,
-            0,
-            0,
-            1,
-            true,
-            false
-        ); // paused
-        // Note: mininting using lists only cares if the list is paused, not if the Crate as a whole is
+    function testSetListAndMint(
+        uint32 listMaxSupply,
+        uint8 numLists
+        ) public {
+
+        listMaxSupply = uint32(bound(listMaxSupply, 10, template.userSupply()));
+        numLists = uint8(bound(numLists, 2, 15));
+        // Account for a non-list mint
+        template.setSupply(listMaxSupply * (numLists+1));
         bytes32[] memory proofList = new bytes32[](1);
-        proofList[0] = proof;
-        template.mint{value: 10}(proofList, 1, address(this), 10, address(0));
+
+        // Create 3 identical lists
+        for(uint8 i=0;i<numLists;i++) {
+            template.setList(
+                1, // price
+                0,
+                0, // root
+                listMaxSupply, // userSupply
+                listMaxSupply, // maxSupply
+                0,
+                0,
+                1, // unit
+                true,
+                false
+            );
+
+            assertEq(template.reservedSupply(),(i+1)*listMaxSupply);
+        }
+
+        for(uint8 i=0;i<numLists;i++) {
+
+            if(template.claimedList(i+1, address(this)) + listMaxSupply > listMaxSupply)
+                vm.expectRevert(IMintlistExt.ListClaimSupply.selector);
+            
+            template.mint{value: listMaxSupply}(proofList, i+1, address(this), listMaxSupply, address(0));
+            assertEq(template.reservedSupply(), (numLists-(i+1))*listMaxSupply);
+        }
+        
         template.unpause();
-        template.mint{value: 10 * template.price()}(10);
+        template.mint{value: listMaxSupply * template.price()}(listMaxSupply);
+        assertEq(template.totalSupply(), template.maxSupply());
     }
 
     function testProcessPayment() public {
