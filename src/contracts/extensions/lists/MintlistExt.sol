@@ -180,7 +180,7 @@ abstract contract MintlistExt is IMintlistExt {
 
         //@TODO maybe give the choice of basing the proof verification on the sender or the recipient?
         bytes32 leaf = keccak256(bytes.concat(keccak256(bytes.concat(abi.encode(msg.sender)))));
-        if (!MerkleProofLib.verifyCalldata(proof_, list.root, leaf)) revert NotEligible();
+        if (list.root != bytes32(0) && !MerkleProofLib.verifyCalldata(proof_, list.root, leaf)) revert NotEligible();
 
         _amount_ = amount_ * list.unit;
 
@@ -191,6 +191,10 @@ abstract contract MintlistExt is IMintlistExt {
 
             listSupply[listId_] += _amount_;
             if (listSupply[listId_] > list.maxSupply) revert ListMaxSupply();
+
+            if (list.reserved) {
+                _reservedSupply -= _amount_;
+            }
         }
 
         if ((list.start != 0 && block.timestamp < list.start) || (list.end != 0 && block.timestamp > list.end)) {
