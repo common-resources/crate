@@ -22,7 +22,7 @@ import {MerkleProofLib} from "solady/src/utils/MerkleProofLib.sol";
  * @custom:github https://github.com/common-resources/crate
  */
 abstract contract MintlistExt is IMintlistExt {
-    /// @dev Total supply of tokens reserved for the custom lists.
+    /// @dev Total supply of non-minted tokens reserved for the custom lists.
     uint32 internal _reservedSupply;
 
     /// @dev current count of custom mint lists
@@ -67,31 +67,34 @@ abstract contract MintlistExt is IMintlistExt {
 
     function _updateReserved(
         uint8 listId_,
-        bool currentReserved_,
-        bool reserved_,
-        uint32 currentListMaxSupply_,
-        uint32 listMaxSupply_,
-        uint32 maxSupply_
+        bool oldReserved_,
+        bool newReserved_,
+        uint32 oldListMaxSupply_,
+        uint32 newListMaxSupply_,
+        uint32 contractMaxSupply_
     )
         internal
         virtual
     {
         unchecked {
-            if (reserved_ && currentReserved_) {
-                if (listMaxSupply_ > currentListMaxSupply_) {
-                    _reservedSupply += listMaxSupply_ - currentListMaxSupply_;
-                    if (_reservedSupply > maxSupply_) revert ReservedMaxSupply();
+
+            if (newReserved_ && oldReserved_) {
+                if (newListMaxSupply_ > oldListMaxSupply_) {
+                    _reservedSupply += newListMaxSupply_ - oldListMaxSupply_;
+                    if (_reservedSupply > contractMaxSupply_) revert ReservedMaxSupply();
                 } else {
-                    _reservedSupply -= currentListMaxSupply_ - listMaxSupply_;
+                    _reservedSupply -= oldListMaxSupply_ - newListMaxSupply_;
                 }
                 return;
             }
 
             uint32 alreadyMinted = listSupply[listId_];
-            if (reserved_) {
-                _reservedSupply += listMaxSupply_ - alreadyMinted;
-            } else if (currentReserved_) {
-                _reservedSupply -= currentListMaxSupply_ - alreadyMinted;
+            if (newReserved_) {
+                _reservedSupply += newListMaxSupply_ - alreadyMinted;
+            } else if (oldReserved_) {
+                // When disabling reserved supply of the list, don't remove the amount already minted
+                // oldListMaxSupply_ - alreadyMinted is always >= 0 since maxSupply is a limit for mint
+                _reservedSupply -= oldListMaxSupply_ - alreadyMinted;
             }
         }
     }
@@ -192,6 +195,7 @@ abstract contract MintlistExt is IMintlistExt {
             listSupply[listId_] += _amount_;
             if (listSupply[listId_] > list.maxSupply) revert ListMaxSupply();
 
+            // Remove minted amount from the reservedSupply
             if (list.reserved) {
                 _reservedSupply -= _amount_;
             }
