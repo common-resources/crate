@@ -17,6 +17,16 @@ pragma solidity ^0.8.26;
  * @custom:github https://github.com/common-resources/crate
  */
 interface ICoreMetadata1155 {
+    /// @dev This event emits when the metadata of a token is updated.
+    /// So that the third-party platforms such as NFT market could
+    /// timely update the images and related attributes of the NFT.
+    event MetadataUpdate(uint256 tokenId_);
+
+    /// @dev This event emits when the metadata of a range of tokens is updated.
+    /// So that the third-party platforms such as NFT market could
+    /// timely update the images and related attributes of the NFTs.
+    event BatchMetadataUpdate(uint256 fromTokenId_, uint256 toTokenId_);
+
     /**
      * @dev Sets `tokenURI` as the tokenURI of `tokenId`.
      * @param tokenId_ The token id to set the URI for.

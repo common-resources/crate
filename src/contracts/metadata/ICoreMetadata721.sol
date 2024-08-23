@@ -17,6 +17,8 @@ pragma solidity ^0.8.26;
  * @custom:github https://github.com/common-resources/crate
  */
 interface ICoreMetadata721 {
+    event URI(string value, uint256 indexed id);
+
     /// @dev This event emits when the metadata of a token is updated.
     /// So that the third-party platforms such as NFT market could
     /// timely update the images and related attributes of the NFT.
