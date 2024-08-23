@@ -122,8 +122,6 @@ abstract contract CoreMetadata is Core, ICoreMetadata {
     function _setTokenURI(uint256 tokenId_, string memory tokenURI_) internal virtual {
         if (permanentURI || _permanentTokenURIs[tokenId_]) revert URIPermanent();
         _tokenURIs[tokenId_] = tokenURI_;
-
-        emit URI(tokenURI_, tokenId_);
     }
 
     /**

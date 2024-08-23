@@ -58,6 +58,8 @@ abstract contract CoreMetadata721 is ERC721, CoreMetadata, ICoreMetadata721 {
     function setTokenURI(uint256 tokenId_, string memory tokenURI_) external virtual onlyOwner {
         CoreMetadata._setTokenURI(tokenId_, tokenURI_);
 
+        emit URI(tokenURI_, tokenId_);
+
         emit MetadataUpdate(tokenId_);
     }
 

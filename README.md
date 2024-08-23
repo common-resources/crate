@@ -1,13 +1,3 @@
-<!--
-SPDX-License-Identifier: CC-BY-SA-4.0
-
-SPDX-FileType: TEXT
-
-SPDX-FileCopyrightText: 2024 Johannes Krauser III <krauser@co.xyz>, Zodomo <zodomo@proton.me>
-
-SPDX-FileContributor: Johannes Krauser III <krauser@co.xyz>
--->
-
 <a id="readme-top"></a>
 
 ![Current Version](https://img.shields.io/badge/version-v0.1-blue)

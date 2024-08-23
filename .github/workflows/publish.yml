@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 Johannes Krauser III <krauser@co.xyz>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 name: Publish Package to npmjs
 on:
   release:

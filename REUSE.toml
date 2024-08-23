@@ -16,6 +16,7 @@ path = [
     ".gitignore",
     "remappings.txt",
     "lcov.info",
+    "slither.db.json",
 ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2024 Johannes Krauser III <krauser@co.xyz>, Zodomo <zodomo@proton.me>"
@@ -40,3 +41,10 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "2024 Johannes Krauser III <krauser@co.xyz>, Zodomo <zodomo@proton.me>"
 SPDX-FileType = "TEXT"
 SPDX-License-Identifier = "NOASSERTION"
+
+[[annotations]]
+path = ["README.md"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2024 Johannes Krauser III <krauser@co.xyz>, Zodomo <zodomo@proton.me>"
+SPDX-FileType = "TEXT"
+SPDX-License-Identifier = "CC-BY-SA-4.0"

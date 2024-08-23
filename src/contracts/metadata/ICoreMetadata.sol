@@ -23,9 +23,6 @@ interface ICoreMetadata {
      */
     event ContractURIUpdated(string uri_);
 
-    // @TODO document
-    event URI(string value_, uint256 tokenId_);
-
     /**
      * @dev Emitted when the contract metadata is updated.
      * @param baseURI_ The new base metadata URI.
