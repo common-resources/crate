@@ -23,7 +23,7 @@ interface IRoyaltyExt {
      * @param receiver_ The address of the receiver of the royalty fee.
      * @param bps_ The updated royalty fee, represented as a 96-bit fixed-point number.
      */
-    event RoyaltiesUpdate(uint256 indexed tokenId_, address indexed receiver_, uint96 indexed bps_);
+    event RoyaltiesUpdate(uint256 indexed tokenId_, address indexed receiver_, uint96 bps_);
 
     /**
      * @dev Emitted when the royalty feature is disabled by setting address(0) as receiver.

@@ -46,7 +46,7 @@ abstract contract ReferralExt is IReferralExt {
             (bool success,) = payable(referral_).call{value: referralAlloc}("");
             if (!success) revert TransferFailed();
 
-            emit Referral(referral_, referralAlloc);
+            emit Referral(referral_, msg.sender, referralAlloc);
         }
     }
 

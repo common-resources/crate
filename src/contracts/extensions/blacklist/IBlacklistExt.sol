@@ -22,7 +22,7 @@ interface IBlacklistExt {
      * @param blacklistedAssets The list of addresses marked for blacklist addition/removal.
      * @param status The status to which they have been updated.
      */
-    event BlacklistUpdate(address[] indexed blacklistedAssets, bool indexed status);
+    event BlacklistUpdate(address[] blacklistedAssets, bool indexed status);
 
     /// @dev Cannot execute an operation from a address than owns blacklisted assets.
     error Blacklisted();

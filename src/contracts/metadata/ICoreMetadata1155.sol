@@ -20,12 +20,12 @@ interface ICoreMetadata1155 {
     /// @dev This event emits when the metadata of a token is updated.
     /// So that the third-party platforms such as NFT market could
     /// timely update the images and related attributes of the NFT.
-    event MetadataUpdate(uint256 tokenId_);
+    event MetadataUpdate(uint256 indexed tokenId_);
 
     /// @dev This event emits when the metadata of a range of tokens is updated.
     /// So that the third-party platforms such as NFT market could
     /// timely update the images and related attributes of the NFTs.
-    event BatchMetadataUpdate(uint256 fromTokenId_, uint256 toTokenId_);
+    event BatchMetadataUpdate(uint256 indexed fromTokenId_, uint256 indexed toTokenId_);
 
     /**
      * @dev Sets `tokenURI` as the tokenURI of `tokenId`.

@@ -21,7 +21,7 @@ interface IReferralExt {
      * @dev Emitted when the referral fee is updated.
      * @param referralFee_ The new referral fee.
      */
-    event ReferralFeeUpdate(uint16 indexed referralFee_);
+    event ReferralFeeUpdate(uint16 referralFee_);
 
     /**
      * @dev Emitted when a referral fee is paid.
@@ -30,7 +30,7 @@ interface IReferralExt {
      */
     //@TODO * @param _referred The address of the referred account.
     //@TODO * @param _amount The amount of tokens minted.
-    event Referral(address indexed referral_, uint256 indexed value_);
+    event Referral(address indexed referral_, address indexed referred_, uint256 value_);
 
     /// @dev Self-referral to either msg.sender or recipient is not allowed.
     error SelfReferral();

@@ -61,38 +61,46 @@ interface ICore {
      * @dev Emitted when the price is updated.
      * @param price_ The new price.
      */
-    event PriceUpdate(uint256 indexed price_);
+    event PriceUpdate(uint256 price_);
 
     /**
      * @dev Emitted when the supply is updated.
      * @param supply_ The new supply.
      */
-    event SupplyUpdate(uint256 indexed supply_);
+    event SupplyUpdate(uint256 supply_);
 
     /**
      * @notice Emitted when the minting range is updated.
      * @param start_ The new start timestamp of the public mint.
      * @param end_ The new end timestamp of the public mint.
      */
-    event MintPeriodUpdate(uint256 indexed start_, uint256 indexed end_);
+    event MintPeriodUpdate(uint256 start_, uint256 end_);
 
     /**
      * @dev Emitted when the maximum claimable tokens per user are updated.
      * @param claimable_ The new amount of tokens available per address.
      */
-    event UserClaimableUpdate(uint256 indexed claimable_);
+    event UserClaimableUpdate(uint256 claimable_);
 
     /**
      * @dev Emitted when the default unit amount of tokens minted is updated.
      * @param unit_ The new amount of tokens you mint for every 1 you pay.
      */
-    event UnitUpdate(uint256 indexed unit_);
+    event UnitUpdate(uint256 unit_);
 
     /**
      * @dev Emitted when the contract owner withdraws funds.
      *
-     * @param to The address to which the funds are withdrawn.
-     * @param amount The amount of funds withdrawn.
+     * @param to_ The address to which the funds are withdrawn.
+     * @param amount_ The amount of funds withdrawn.
      */
-    event Withdraw(address indexed to, uint256 indexed amount);
+    event Withdraw(address indexed to_, uint256 amount_);
+
+    /**
+     * @notice Emitted when a new mint is executed.
+     * @dev Needed in order to keep track of the claimed supply.
+     * @param minter_ The address of the minter.
+     * @param amount_ The amount of tokens minted.
+     */
+    event Minted(address indexed minter_, uint256 amount_);
 }

@@ -66,33 +66,33 @@ abstract contract MintlistExt is IMintlistExt {
     }
 
     function _updateReserved(
-        uint8 listId_,
-        bool currentReserved_,
+        bool oldReserved_,
         bool reserved_,
-        uint32 currentListMaxSupply_,
+        uint32 alreadyMinted_,
+        uint32 oldListMaxSupply_,
         uint32 listMaxSupply_,
         uint32 maxSupply_
     )
         internal
         virtual
     {
+        if (!oldReserved_ && !reserved_) return;
         unchecked {
-            if (reserved_ && currentReserved_) {
-                if (listMaxSupply_ > currentListMaxSupply_) {
-                    _reservedSupply += listMaxSupply_ - currentListMaxSupply_;
+            if (oldReserved_ && reserved_) {
+                if (listMaxSupply_ == oldListMaxSupply_) return;
+                if (listMaxSupply_ > oldListMaxSupply_) {
+                    _reservedSupply += listMaxSupply_ - oldListMaxSupply_;
                     if (_reservedSupply > maxSupply_) revert ReservedMaxSupply();
-                } else {
-                    _reservedSupply -= currentListMaxSupply_ - listMaxSupply_;
+                    return;
                 }
+                _reservedSupply -= oldListMaxSupply_ - listMaxSupply_;
                 return;
             }
-
-            uint32 alreadyMinted = listSupply[listId_];
             if (reserved_) {
-                _reservedSupply += listMaxSupply_ - alreadyMinted;
-            } else if (currentReserved_) {
-                _reservedSupply -= currentListMaxSupply_ - alreadyMinted;
+                _reservedSupply += listMaxSupply_ - alreadyMinted_;
+                return;
             }
+            _reservedSupply -= oldListMaxSupply_ - alreadyMinted_;
         }
     }
 
@@ -119,7 +119,9 @@ abstract contract MintlistExt is IMintlistExt {
 
         MintList storage list = lists[id];
         if (listId_ != 0 && list.userSupply == 0) revert ListDeleted();
-        _updateReserved(listId_, list.reserved, reserved_, list.maxSupply, maxSupply_, contractMaxSupply_);
+        if (userSupply_ == 0) revert NotZero();
+
+        _updateReserved(list.reserved, reserved_, listSupply[id], list.maxSupply, maxSupply_, contractMaxSupply_);
 
         list.root = root_;
         list.userSupply = userSupply_;
@@ -152,7 +154,7 @@ abstract contract MintlistExt is IMintlistExt {
 
         if (list.userSupply == 0) revert ListDeleted();
 
-        _updateReserved(listId_, list.reserved, false, list.maxSupply, 0, 0);
+        _updateReserved(list.reserved, false, listSupply[listId_], list.maxSupply, 0, 0);
 
         list.userSupply = 0;
 

@@ -49,14 +49,14 @@ interface IMintlistExt {
      * @param listId_ The ID of the custom mint list.
      * @param amount_ The amount of tokens minted.
      */
-    event ListMinted(address indexed minter_, uint8 indexed listId_, uint256 indexed amount_);
+    event ListMinted(address indexed minter_, uint8 indexed listId_, uint256 amount_);
 
     /**
      * @dev Emitted when a custom mint list is disabled.
      * @param listId_ The ID of the custom mint list.
      * @param paused_ The paused status of the custom mint list.
      */
-    event MintListStatus(uint8 indexed listId_, bool indexed paused_);
+    event MintListStatus(uint8 indexed listId_, bool paused_);
 
     /**
      * @dev Emitted when a custom mint list is deleted.
@@ -68,9 +68,9 @@ interface IMintlistExt {
     /**
      * @dev Emitted when a custom mint list is configured.
      * @param listId_ The ID of the custom mint list.
-     * @param _list The configuration of the list.
+     * @param list_ The configuration of the list.
      */
-    event MintListUpdate(uint8 indexed listId_, MintList _list);
+    event MintListUpdate(uint8 indexed listId_, MintList list_);
 
     /// @dev List is deleted
     error ListDeleted();

@@ -148,6 +148,7 @@ contract ERC721Crate is Initializable, CoreMetadata721, BlacklistExt, MintlistEx
         }
 
         // Process ERC721 mints
+        emit Minted(msg.sender, tokenAmount);
         _mintBatch(recipient_, tokenAmount);
     }
 
@@ -204,8 +205,8 @@ contract ERC721Crate is Initializable, CoreMetadata721, BlacklistExt, MintlistEx
         // If the reserved supply of the list is deactivated
         if (!reserved) _requireUnreservedSupply(tokenAmount, _totalSupply, maxSupply);
 
-        _mintBatch(recipient_, tokenAmount);
         emit ListMinted(msg.sender, listId_, tokenAmount);
+        _mintBatch(recipient_, tokenAmount);
     }
 
     /**
