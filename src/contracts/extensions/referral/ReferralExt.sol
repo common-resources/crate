@@ -9,7 +9,7 @@
  * SPDX-FileContributor: Johannes Krauser III <krauser@co.xyz>
  */
 
-pragma solidity ^0.8.26;
+pragma solidity 0.8.23;
 
 import {TransferFailed} from "../../ICore.sol";
 import {IReferralExt} from "./IReferralExt.sol";
@@ -33,7 +33,7 @@ abstract contract ReferralExt is IReferralExt {
     uint16 public referralFee;
 
     function _handleReferral(address referral_, address recipient_) internal virtual {
-        if (msg.value > 0 && referral_ != address(0)) {
+        if (msg.value > 0 && referralFee > 0 && referral_ > address(0)) {
             if (referral_ == msg.sender || referral_ == recipient_) revert SelfReferral();
 
             // If referral isn't address(0) and mint isn't free, process sending referral fee

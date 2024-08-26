@@ -7,7 +7,7 @@ gas_reports = ["*"]
 optimizer = true
 out = "out"
 script = "script"
-solc = "0.8.26"
+solc = "0.8.23"
 src = "src"
 test = "test"
 

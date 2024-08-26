@@ -9,7 +9,7 @@
  * SPDX-FileContributor: Modified by Johannes Krauser III <krauser@co.xyz>
  */
 
-pragma solidity ^0.8.26;
+pragma solidity 0.8.23;
 
 /**
  * @title Asset

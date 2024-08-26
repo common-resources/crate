@@ -8,7 +8,7 @@
  * SPDX-FileContributor: Johannes Krauser III <krauser@co.xyz>
  */
 
-pragma solidity ^0.8.26;
+pragma solidity 0.8.23;
 
 import {IERC721Lockable} from "erc721-lockable/contracts/IERC721Lockable.sol";
 

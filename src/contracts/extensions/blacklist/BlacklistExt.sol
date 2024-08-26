@@ -9,7 +9,7 @@
  * SPDX-FileContributor: Johannes Krauser III <krauser@co.xyz>
  */
 
-pragma solidity ^0.8.26;
+pragma solidity 0.8.23;
 
 import {Asset as tAsset} from "../blacklist/Asset.sol";
 import {IBlacklistExt} from "../blacklist/IBlacklistExt.sol";

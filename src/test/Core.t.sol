@@ -8,7 +8,7 @@
  * SPDX-FileContributor: Johannes Krauser III <krauser@co.xyz> Attention <attentionenjoyer@gmail.com>
  */
 
-pragma solidity ^0.8.26;
+pragma solidity 0.8.23;
 
 import {Core} from "../contracts/Core.sol";
 import {ICore, NotZero, TransferFailed} from "../contracts/ICore.sol";

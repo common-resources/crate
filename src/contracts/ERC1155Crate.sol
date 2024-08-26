@@ -16,7 +16,7 @@ import {Initializable} from "solady/src/utils/Initializable.sol";
 
 import {NotZero} from "./ICore.sol";
 
-pragma solidity ^0.8.26;
+pragma solidity 0.8.23;
 
 /**
  * @title ERC1155Crate

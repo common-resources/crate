@@ -8,7 +8,7 @@
  * SPDX-FileContributor: Johannes Krauser III <krauser@co.xyz>
  */
 
-pragma solidity ^0.8.26;
+pragma solidity 0.8.23;
 
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {Ownable} from "solady/src/auth/Ownable.sol";
@@ -16,8 +16,8 @@ import {ReentrancyGuard} from "solady/src/utils/ReentrancyGuard.sol";
 
 import {ICore, NotZero, TransferFailed} from "./ICore.sol";
 
-import {ERC20 as tERC20} from "token-types/src/ERC20.sol";
-import {ERC721 as tERC721} from "token-types/src/ERC721.sol";
+import {ERC20 as tERC20} from "./types/tERC20.sol";
+import {ERC721 as tERC721} from "./types/tERC721.sol";
 
 /**
  * @title Core

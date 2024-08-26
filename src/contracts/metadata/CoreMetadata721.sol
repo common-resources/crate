@@ -8,7 +8,7 @@
  * SPDX-FileContributor: Johannes Krauser III <krauser@co.xyz>
  */
 
-pragma solidity ^0.8.26;
+pragma solidity 0.8.23;
 
 // ICoreMetadata is imported for passing to child contracts
 import {CoreMetadata, ICoreMetadata} from "./CoreMetadata.sol";

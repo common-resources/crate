@@ -8,7 +8,7 @@
  * SPDX-FileContributor: Zodomo <zodomo@proton.me> Attention <attentionenjoyer@gmail.com>
  */
 
-pragma solidity ^0.8.26;
+pragma solidity 0.8.23;
 
 import {Core} from "../contracts/Core.sol";
 
