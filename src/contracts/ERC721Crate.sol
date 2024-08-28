@@ -315,13 +315,19 @@ contract ERC721Crate is Initializable, CoreMetadata721, BlacklistExt, MintlistEx
     // >>>>>>>>>>>> [ Royalty ] <<<<<<<<<<<<
 
     function setRoyalties(address recipient_, uint96 bps_) external virtual onlyOwner {
+        _requireRoyaltiesUnfrozen();
         _requireRoyaltiesEnabled();
         _setRoyalties(recipient_, bps_);
     }
 
     function setTokenRoyalties(uint256 tokenId_, address recipient_, uint96 bps_) external virtual onlyOwner {
+        _requireRoyaltiesUnfrozen();
         _requireRoyaltiesEnabled();
         _setTokenRoyalties(tokenId_, recipient_, bps_);
+    }
+
+    function freezeRoyalties() external virtual onlyOwner {
+        _freezeRoyalties();
     }
 
     function disableRoyalties() external virtual onlyOwner {

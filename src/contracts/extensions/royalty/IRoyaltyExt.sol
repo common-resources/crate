@@ -31,11 +31,16 @@ interface IRoyaltyExt {
      */
     event RoyaltiesDisabled();
 
+    /**
+     * @dev Emitted when the royalty feature is frozen.
+     */
+    event RoyaltiesFrozen();
+
     /// @dev Cannot set royalties when they have previously been disabled.
     error DisabledRoyalties();
 
-    /// @dev Cannot set royalties above the maximum value.
-    error MaxRoyalties();
+    /// @dev Cannot set royalties when they have been frozen.
+    error FrozenRoyalties();
 
     /**
      * @dev Sets the default royalty receiver and fee for the contract.
@@ -51,6 +56,12 @@ interface IRoyaltyExt {
      * @param bps_ The royalty fee, represented as a 96-bit fixed-point number.
      */
     function setTokenRoyalties(uint256 tokenId_, address recipient_, uint96 bps_) external;
+
+    /**
+     * @notice Freezes royalties for the contract.
+     * @dev Prevents further changes to royalties by setting the frozen flag to true.
+     */
+    function freezeRoyalties() external;
 
     /**
      * @notice Disables royalties for the contract.

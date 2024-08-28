@@ -75,7 +75,8 @@ contract ERC721CrateTest is Test, ERC721Holder {
     function setUp() public {
         masterCopy = new ERC721CrateDeabstracted();
         template = ERC721CrateDeabstracted(payable(LibClone.cloneDeterministic(address(masterCopy), bytes32(0x0))));
-        manualInit = ERC721CrateDeabstracted(payable(LibClone.cloneDeterministic(address(masterCopy), bytes32(uint256(0x1)))));
+        manualInit =
+            ERC721CrateDeabstracted(payable(LibClone.cloneDeterministic(address(masterCopy), bytes32(uint256(0x1)))));
         template.initialize("ERC721Crate Test", "ERC721Crate", 100, 500, address(this), 0.01 ether);
 
         template.setBaseURI("https://miya.wtf/api/", "");
@@ -109,8 +110,8 @@ contract ERC721CrateTest is Test, ERC721Holder {
 
         address owner = _bytesToAddress(ownerSalt);
 
-        if (royalty > 1000) {
-            vm.expectRevert(IRoyaltyExt.MaxRoyalties.selector);
+        if (royalty > 10_000) {
+            vm.expectRevert(ERC2981.RoyaltyOverflow.selector);
             manualInit.initialize(name, symbol, maxSupply, royalty, owner, price);
             return;
         } else if (owner == address(0)) {
@@ -422,9 +423,6 @@ contract ERC721CrateTest is Test, ERC721Holder {
         (, uint256 royalty) = template.royaltyInfo(1, 1 ether);
         assertEq(royaltyFee, (royalty * 10_000) / 1 ether, "royalty error");
 
-        vm.expectRevert(IRoyaltyExt.MaxRoyalties.selector);
-        template.setRoyalties(recipient, invalidFee);
-
         template.disableRoyalties();
         vm.expectRevert(IRoyaltyExt.DisabledRoyalties.selector);
         template.setRoyalties(recipient, royaltyFee);
@@ -441,7 +439,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
         tokenId = bound(tokenId, 1, type(uint40).max);
         vm.assume(recipientSalt != bytes32(""));
         royaltyFee = uint96(bound(royaltyFee, 1, 1000));
-        invalidFee = uint96(bound(invalidFee, 1001, type(uint96).max));
+        invalidFee = uint96(bound(invalidFee, 10_001, type(uint96).max));
 
         address recipient = _bytesToAddress(recipientSalt);
         template.setTokenRoyalties(tokenId, recipient, royaltyFee);
@@ -449,9 +447,9 @@ contract ERC721CrateTest is Test, ERC721Holder {
         (, uint256 royalty) = template.royaltyInfo(tokenId, 1 ether);
         assertEq(royaltyFee, (royalty * 10_000) / 1 ether, "royalty error");
 
-        vm.expectRevert(IRoyaltyExt.MaxRoyalties.selector);
+        vm.expectRevert(ERC2981.RoyaltyOverflow.selector);
         template.setTokenRoyalties(tokenId, recipient, invalidFee);
-        vm.expectRevert(IRoyaltyExt.MaxRoyalties.selector);
+        vm.expectRevert(NotZero.selector);
         template.setTokenRoyalties(0, recipient, invalidFee);
 
         template.disableRoyalties();
@@ -536,11 +534,10 @@ contract ERC721CrateTest is Test, ERC721Holder {
         maxSupply = uint32(bound(maxSupply, 1, template.maxSupply()));
         userSupply = uint32(bound(userSupply, 1, maxSupply));
 
-        if(maxSupply == 0 || userSupply == 0 || unit == 0) {
+        if (maxSupply == 0 || userSupply == 0 || unit == 0) {
             reverted = true;
             vm.expectRevert(NotZero.selector);
-
-        } else if(end != 0 && start > end) {
+        } else if (end != 0 && start > end) {
             reverted = true;
             vm.expectRevert(IMintlistExt.ListTimestampEnd.selector);
         }
@@ -548,7 +545,7 @@ contract ERC721CrateTest is Test, ERC721Holder {
         // test general case
         template.setList(price, 0, root, userSupply, maxSupply, start, end, unit, reserved, false);
 
-        if(!reverted) {
+        if (!reverted) {
             MintList memory list = template.getList(1);
             assertEq(list.root, root);
             assertEq(list.price, price);
@@ -570,8 +567,9 @@ contract ERC721CrateTest is Test, ERC721Holder {
         uint32 start,
         uint32 end,
         bool reserved
-    ) private {
-
+    )
+        private
+    {
         template.setList(
             1, // price
             listId,
@@ -582,7 +580,8 @@ contract ERC721CrateTest is Test, ERC721Holder {
             end,
             unit,
             reserved,
-            false); // paused
+            false
+        ); // paused
     }
 
     function _helperSetList(
@@ -593,48 +592,39 @@ contract ERC721CrateTest is Test, ERC721Holder {
         uint32 end,
         bool reserved,
         uint8 listId
-    ) private returns (bool) {
-
+    )
+        private
+        returns (bool)
+    {
         bool reverted = false;
-        
+
         // W/o this bound, an overflow can be caused
         maxSupply = uint32(bound(maxSupply, 0, 1000));
         userSupply = uint32(bound(userSupply, 0, 1000));
 
         // Modify the lists and check for reverts
 
-        if(maxSupply == 0 || userSupply == 0 || unit == 0) {
+        if (maxSupply == 0 || userSupply == 0 || unit == 0) {
             reverted = true;
             vm.expectRevert(NotZero.selector);
-
-        } else if(maxSupply < template.listSupply(listId)) {
+        } else if (maxSupply < template.listSupply(listId)) {
             reverted = true;
             vm.expectRevert(IMintlistExt.SupplyUnderflow.selector);
-        
-        } else if(end != 0 && start > end) {
+        } else if (end != 0 && start > end) {
             reverted = true;
             vm.expectRevert(IMintlistExt.ListTimestampEnd.selector);
-            
-        } else if (listId != 0 && reserved &&
-            template.getList(listId).reserved &&
-            (maxSupply > template.getList(listId).maxSupply) &&
-            ((template.reservedSupply() + maxSupply - template.getList(listId).maxSupply) > template.maxSupply())) {
-            
+        } else if (
+            listId != 0 && reserved && template.getList(listId).reserved
+                && (maxSupply > template.getList(listId).maxSupply)
+                && ((template.reservedSupply() + maxSupply - template.getList(listId).maxSupply) > template.maxSupply())
+        ) {
             reverted = true;
             vm.expectRevert(IMintlistExt.ReservedMaxSupply.selector);
         }
 
-        _helperFuzzedTestSetList(
-            listId,
-            unit,
-            userSupply,
-            maxSupply,
-            start,
-            end,
-            reserved
-        );
+        _helperFuzzedTestSetList(listId, unit, userSupply, maxSupply, start, end, reserved);
 
-        if(!reverted && listId != 0) {
+        if (!reverted && listId != 0) {
             assertEq(template.getList(listId).root, 0);
             assertEq(template.getList(listId).price, 1);
             assertEq(template.getList(listId).unit, unit);
@@ -660,50 +650,27 @@ contract ERC721CrateTest is Test, ERC721Holder {
         public
     {
         uint32 numElems = 16;
-        
-        for(uint256 i=0;i<numElems;i++) {
 
-            _helperSetList(
-                unit[i],
-                userSupply[i],
-                maxSupply[i],
-                start[i],
-                end[i],
-                reserved[i],
-                0
-            );
+        for (uint256 i = 0; i < numElems; i++) {
+            _helperSetList(unit[i], userSupply[i], maxSupply[i], start[i], end[i], reserved[i], 0);
         }
 
-        for(uint256 i=0;i<numElems;i++){
-            for(uint8 curListNum=1;curListNum<template.listIndex();curListNum++) {
-
-                _helperSetList(
-                    unit[i],
-                    userSupply[i],
-                    maxSupply[i],
-                    start[i],
-                    end[i],
-                    reserved[i],
-                    curListNum
-                );
+        for (uint256 i = 0; i < numElems; i++) {
+            for (uint8 curListNum = 1; curListNum < template.listIndex(); curListNum++) {
+                _helperSetList(unit[i], userSupply[i], maxSupply[i], start[i], end[i], reserved[i], curListNum);
             }
         }
-        
     }
 
-    function testSetListAndMint(
-        uint32 listMaxSupply,
-        uint8 numLists
-        ) public {
-
+    function testSetListAndMint(uint32 listMaxSupply, uint8 numLists) public {
         listMaxSupply = uint32(bound(listMaxSupply, 10, template.userSupply()));
         numLists = uint8(bound(numLists, 2, 15));
         // Account for a non-list mint
-        template.setSupply(listMaxSupply * (numLists+1));
+        template.setSupply(listMaxSupply * (numLists + 1));
         bytes32[] memory proofList = new bytes32[](1);
 
         // Create 3 identical lists
-        for(uint8 i=0;i<numLists;i++) {
+        for (uint8 i = 0; i < numLists; i++) {
             template.setList(
                 1, // price
                 0,
@@ -717,18 +684,18 @@ contract ERC721CrateTest is Test, ERC721Holder {
                 false
             );
 
-            assertEq(template.reservedSupply(),(i+1)*listMaxSupply);
+            assertEq(template.reservedSupply(), (i + 1) * listMaxSupply);
         }
 
-        for(uint8 i=0;i<numLists;i++) {
-
-            if(template.claimedList(i+1, address(this)) + listMaxSupply > listMaxSupply)
+        for (uint8 i = 0; i < numLists; i++) {
+            if (template.claimedList(i + 1, address(this)) + listMaxSupply > listMaxSupply) {
                 vm.expectRevert(IMintlistExt.ListClaimSupply.selector);
-            
-            template.mint{value: listMaxSupply}(proofList, i+1, address(this), listMaxSupply, address(0));
-            assertEq(template.reservedSupply(), (numLists-(i+1))*listMaxSupply);
+            }
+
+            template.mint{value: listMaxSupply}(proofList, i + 1, address(this), listMaxSupply, address(0));
+            assertEq(template.reservedSupply(), (numLists - (i + 1)) * listMaxSupply);
         }
-        
+
         template.unpause();
         template.mint{value: listMaxSupply * template.price()}(listMaxSupply);
         assertEq(template.totalSupply(), template.maxSupply());

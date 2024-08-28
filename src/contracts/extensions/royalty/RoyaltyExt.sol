@@ -24,9 +24,9 @@ import {ERC2981} from "solady/src/tokens/ERC2981.sol";
  * @custom:github https://github.com/common-resources/crate
  */
 abstract contract RoyaltyExt is IRoyaltyExt, ERC2981 {
-    //@TODO opinionated? might consider to move it in factory
-    /// @dev Maximum royalty fee in basis points.
-    uint16 internal constant _MAX_ROYALTY_BPS = 1000;
+    uint96 public defaultRoyalty;
+
+    bool public royaltiesFrozen;
 
     function _requireRoyaltiesEnabled() internal view {
         // Revert if royalties are disabled
@@ -34,19 +34,21 @@ abstract contract RoyaltyExt is IRoyaltyExt, ERC2981 {
         if (receiver == address(0)) revert DisabledRoyalties();
     }
 
-    function _setRoyalties(address recipient_, uint96 bps_) internal virtual {
-        if (bps_ > _MAX_ROYALTY_BPS) revert MaxRoyalties();
+    function _requireRoyaltiesUnfrozen() internal view {
+        // Revert if royalties are frozen
+        if (royaltiesFrozen) revert FrozenRoyalties();
+    }
 
+    function _setRoyalties(address recipient_, uint96 bps_) internal virtual {
         // Royalty recipient of nonexistent tokenId 0 is used as royalty status indicator, address(0) == disabled
         _setTokenRoyalty(0, recipient_, bps_);
         _setDefaultRoyalty(recipient_, bps_);
+        defaultRoyalty = bps_;
 
         emit RoyaltiesUpdate(0, recipient_, bps_);
     }
 
     function _setTokenRoyalties(uint256 tokenId_, address recipient_, uint96 bps_) internal virtual {
-        if (bps_ > _MAX_ROYALTY_BPS) revert MaxRoyalties();
-
         // Revert if resetting tokenId 0 as it is utilized for royalty enablement status
         if (tokenId_ == 0) revert NotZero();
 
@@ -55,6 +57,15 @@ abstract contract RoyaltyExt is IRoyaltyExt, ERC2981 {
         else _setTokenRoyalty(tokenId_, recipient_, bps_);
 
         emit RoyaltiesUpdate(tokenId_, recipient_, bps_);
+    }
+
+    function _freezeRoyalties() internal virtual {
+        _requireRoyaltiesEnabled();
+        _requireRoyaltiesUnfrozen();
+
+        royaltiesFrozen = true;
+
+        emit RoyaltiesFrozen();
     }
 
     function _disableRoyalties() internal virtual {
